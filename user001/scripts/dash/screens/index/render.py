@@ -12,19 +12,19 @@ modellerButton = Create(CButton, {'name': 'modellerButton',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Modeller'})
-scenarioManagerButton = Create(CButton, {'name': 'scenarioManagerButton', 'link': '/d/DisplayScreen@screen=scenarioManager&asset=Alperia-VSM',
+scenarioManagerButton = Create(CButton, {'name': 'scenarioManagerButton', 'link': '/d/DisplayScreen@screen=scenarioManager',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Scenario Manager'})
-schedulerButton = Create(CButton, {'name': 'schedulerButton', 'link': '/d/DisplayScreen@screen=scheduler&asset=Alperia-VSM',
+schedulerButton = Create(CButton, {'name': 'schedulerButton', 'link': '/d/DisplayScreen@screen=scheduler',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Scheduler'})
-exportCenterButton = Create(CButton, {'name': 'exportCenterButton', 'link': '/d/DisplayScreen@screen=exportCenter&asset=Alperia-VSM',
+exportCenterButton = Create(CButton, {'name': 'exportCenterButton', 'link': '/d/DisplayScreen@screen=exportCenter',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Export Center'})
-batchManagerButton = Create(CButton, {'name': 'batchManagerButton', 'link': '/d/DisplayScreen@screen=batchManager&asset=Alperia-VSM',
+batchManagerButton = Create(CButton, {'name': 'batchManagerButton', 'link': '/d/DisplayScreen@screen=batchManager',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Batch Manager'})
