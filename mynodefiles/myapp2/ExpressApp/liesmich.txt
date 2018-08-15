@@ -1,0 +1,3 @@
+Start via
+
+set DEBUG=myapp2 & node .\bin\www

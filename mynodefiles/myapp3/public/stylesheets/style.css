@@ -1,0 +1,163 @@
+.bgvidcontainer{
+    width: 20px;
+    overflow:hidden;
+    display:block;
+    height: 110px;
+}
+#glass{
+    margin-left: -220px;
+}
+
+#bg_pattern { 
+background-image: url(https://d3k5xyayaartr5.cloudfront.net/_assets/pattern-overlays/patterns/black-squares.png); 
+position: fixed; 
+opacity: 0.8; 
+left: 0px; 
+top: 0px; 
+width: 100%; 
+height: 100%; 
+z-index: 0;
+
+}
+
+body {
+  margin: 0px;
+  background: #efefef;
+  padding: 50px;
+  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+}
+
+header {
+    overflow:hidden;
+    display:block;
+
+  position: fixed;
+  width: 100%;
+  text-align: center;
+  color: white;
+  transition: 1.4s;
+}
+
+div#fashion {
+  width: 100%;
+  min-height: 20vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 1.4s;
+}
+
+div#Benn {
+  display: flex;
+  align-items: left;
+  justify-content: center;
+  color: white;
+  mix-blend-mode: overlay;
+  
+}
+
+
+  
+
+
+div {
+    display: block;
+}
+
+html, body, div, span, applet, object, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, embed, figure, figcaption, footer, header, hgroup, menu, nav, output, ruby, section, summary, time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 1em;
+    vertical-align: baseline;
+}
+
+header:hover {
+  background: rgba(255,255,255,0.8);
+  color: #000;
+}
+
+h2 { 
+  margin: 2rem 3rem 0;
+  mix-blend-mode: overlay;
+  color: #fff;
+ }
+
+a {
+  color: #00B7FF;
+}
+
+#pretzel-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+#pretzel-video-2 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;?
+	opacity: 0.8; 
+	mix-blend-mode: overlay;
+}
+
+#pretzel-video-3 {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;?
+	opacity: 0.8; 
+	mix-blend-mode: hue;
+	
+	
+    transform: rotateY(1deg);
+	transform: rotateZ(1deg);
+    -webkit-transform:rotateY(1deg); /* Safari and Chrome */
+	-webkit-transform:rotateZ(1deg); /* Safari and Chrome */
+    -moz-transform:rotateY(1deg); /* Firefox */
+	-moz-transform:rotateZ(1deg); /* Firefox */
+}
+
+#container {
+    background: #ccc;
+    display: table
+	
+
+display: flex;
+  align-items: left;
+  justify-content: center;
+
+mix-blend-mode: screen;  
+  	
+}
+
+#left, #right {
+    display: table-cell
+}
+#left {
+    width: 50%;
+    background: #eee;
+
+    border: 1px solid #efefef
+}
+#right {
+    background: #eee;
+    border: 1px solid #efefef
+}
+
+#width100PercentTest {
+    width: 100%;
+    height: 1px;
+    background: #ccc;
+}

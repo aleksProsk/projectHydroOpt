@@ -1,0 +1,58 @@
+<div class="grid-item varsize-100-2-4-8"><center>
+  {{#each perStoreResults}} 
+	{{this.store}}
+  {{/each}}</center> 
+</div>
+
+
+{{#each productResults}}
+	<div class="grid-item varsize-12.5-12.5-2-4">
+		{{#with this.images.[0]}}
+			<div class="search-result" 
+				style='
+					background: url({{this.url}}) no-repeat center center; 
+					-webkit-background-size: cover;
+					-moz-background-size: cover;
+					-o-background-size: cover;
+					background-size: cover;
+			'>
+				<div class="search-result-blend">
+					{{../this.name}}
+					<br>			
+					{{../this.store}}
+				</div>
+			</div>
+		{{/with}}
+	</div>
+{{/each}}
+
+{{#each productResults}}
+	<div class="grid-item varsize-12.5-12.5-2-4">
+	<div class="carousel-container">
+		<div class="main-carousel" data-flickity='{ "cellAlign": "center", "contain": true, "initialIndex":0, "wrapAround": true, "cellSelector":".carousel-cell", "percentPosition":true, "accessibility": false, "setGallerySize":false }'>
+			{{#each this.images}}
+				<div class="carousel-cell">
+					<div class="search-result" 
+						style='
+							background: url({{this.url}}) no-repeat center center; 
+							-webkit-background-size: cover;
+							-moz-background-size: cover;
+							-o-background-size: cover;
+							background-size: cover;
+					'>
+					<!--
+						<div id="bg">
+							<img src="{{this.url}}" alt="">
+						</div>-->
+						<div class="search-result-blend">
+							{{../this.name}}
+							<br>			
+							{{../this.store}}
+						</div>
+					</div>
+				</div>
+			{{/each}}
+		</div>		
+	</div>
+	</div>
+{{/each}}

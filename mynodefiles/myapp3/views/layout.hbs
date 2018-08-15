@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{title}}</title>
+	<meta charset="utf-8" />		
+	<meta name="viewport" content="width=device-width initial-scale=1.0 maximum-scale=1.0 user-scalable=yes" />
+    
+	<!-- jQuery -->
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+	<script type="text/javascript" src="http://code.jquery.com/jquery-2.2.0.js"></script>
+	<script src="//code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+    <!-- jQuery.mmenu -->
+    <link type="text/css" rel="stylesheet" href="stylesheets/jquery.mmenu.all.css">
+	<script type="text/javascript" src="javascripts/jquery.mmenu.min.js"></script>  
+	<script type="text/javascript" src="javascripts/jquery.mmenu.all.min.js"></script>  
+	  
+	<!-- flickity-->
+	<link rel="stylesheet" href="stylesheets/flickity.css" media="screen">	 
+	<script src="javascripts/flickity.pkgd.min.js"></script>	  		
+
+	<!-- isotope-->
+	<script src="https://unpkg.com/isotope-layout@3/dist/isotope.pkgd.min.js"></script>
+	<script src="https://unpkg.com/packery@2/dist/packery.pkgd.min.js"></script>
+	
+	<link rel='stylesheet' href='/stylesheets/demo.css' />
+	  
+	<!-- jQuery.mmenu: Fire the plugin onDocumentReady -->
+	<script type="text/javascript">
+	 jQuery(document).ready(function( $ ) {
+		$("#menu").mmenu({
+		   "extensions": [
+			  "theme-dark"
+		   ],
+		   "iconPanels": true,
+		   "navbars": [
+			  {
+				 "position": "top"
+			  },
+			  {
+				 "position": "bottom",
+				 "content": [
+					"<a class='fa fa-envelope' href='#/'></a>",
+					"<a class='fa fa-twitter' href='#/'></a>",
+					"<a class='fa fa-facebook' href='#/'></a>"
+				 ]
+			  }
+		   ]
+		});
+	 });
+	</script>
+  </head>
+  
+<!-------------------------------------------------------------------------------->
+  
+  <body>
+	<!-- The page -->
+			<form method="get" action="/search">
+				<input type="text" name="q">
+				<input type="submit" value="Search">
+			</form>
+
+	<div class="page">
+		<div class="header">
+			<a href="#menu"><span></span></a>		
+			Demo - {{title}}			
+		</div>
+		<!-- Initialisierung von Isotope -->
+		<script>
+		$('.grid').isotope({
+		  // set itemSelector so .grid-sizer is not used in layout
+		  itemSelector: '.grid-item',
+		  percentPosition: true,
+		  masonry: {
+			// use element for option
+			columnWidth: '.grid-sizer'
+		  }
+		})
+		</script>
+		<!-- Automatische Groessenaenderung im Isotope-Grid^ -->
+		<script>
+			function onResize()
+			{		
+				const wpx = $(window).width();
+				const eps = 0.1;
+				$('[class*="varsize"]').each(function(i,ele) {
+					var x = ele.className.match(/varsize-(\d+\.?\d*)-(\d+\.?\d*)-(\d+\.?\d*)-(\d+\.?\d*)/ ).slice(1,5).map(parseFloat);									
+					var s = 1;
+					if (wpx < 500) {s = x[3];} else if (wpx < 1000)	{s = x[2];}
+					w = s*x[0]; h = s*x[1];
+					ele.style.width = Math.min(w,100)-eps + "%";
+					ele.style.height = h + "vw";			
+				});
+				
+				$('[class*="main-carousel"]').each(function(i,ele)
+				{
+					$(ele).flickity('resize');
+				});				
+			};		
+			window.addEventListener('resize', onResize, true);
+			window.addEventListener('load', onResize, true);
+		</script>
+        <div class="content">
+			<div id="isotope-container">
+		<!-------------------------------------------------------------------------------->
+				{{{body}}}
+		<!-------------------------------------------------------------------------------->
+			</div>
+		</div>
+		<script>
+		$('[class*="main-carousel"]').each(function(i,ele)
+		{
+			$(ele).on('pointerMove.flickity', function( event, pointer, moveVector ) 
+			{
+				$(".main-carousel").off('pointerMove.flickity', event);
+			});
+		});
+		</script>
+	</div>
+
+	  <!-- The menu -->
+	  <nav id="menu">
+		 <ul>
+			<li><a href="/">Home</a></li>
+			<li><a href="/about">About us</a>
+			   <ul>
+				  <li><a href="/about/history">History</a></li>
+				  <li><a href="/about/team">The team</a></li>
+				  <li><a href="/about/address">Our address</a></li>
+			   </ul>
+			</li>
+			<li><a href="/contact">Contact</a></li>
+		 </ul>
+	  </nav>	
+	</body>
+</html>
