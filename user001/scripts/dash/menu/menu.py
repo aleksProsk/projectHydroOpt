@@ -24,9 +24,10 @@ menu.addItem('Second', ['Utilities', '/d/DisplayScreen@screen='+args.get('screen
 menu.addSubmenu('Third')
 if args.contains('selected'):
     if args.get('selected') == 'Model':
-        menu.addItem('Third', ['New', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
-        menu.addItem('Third', ['Open', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
-        menu.addItem('Third', ['Save', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
+        menu.addItem('Third', ['New', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item', 'new'])
+        menu.addItem('Third', ['Open', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item', 'open'])
+        menu.addItem('Third', ['Save', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item', 'save'])
+        menu.addItem('Third', ['Add assets', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item', 'add'])
         menu.addItem('Third', ['Preferences', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
     elif args.get('selected') == 'Utilities':
         menu.addItem('Third', ['Price Scenario Generator', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities', 'menu-item'])
