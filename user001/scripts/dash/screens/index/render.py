@@ -12,11 +12,11 @@ modellerButton = Create(CButton, {'name': 'modellerButton',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Modeller'})
-scenarioManagerButton = Create(CButton, {'name': 'scenarioManagerButton',
+scenarioManagerButton = Create(CButton, {'name': 'scenarioManagerButton', 'link': '/d/DisplayScreen@screen=scenarioManager&asset=Alperia-VSM',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Scenario Manager'})
-schedulerButton = Create(CButton, {'name': 'schedulerButton',
+schedulerButton = Create(CButton, {'name': 'schedulerButton', 'link': '/d/DisplayScreen@screen=scheduler&asset=Alperia-VSM',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Scheduler'})

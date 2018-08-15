@@ -25,5 +25,5 @@ class CNavigationPane(CDashComponent):
 	def setNavigationTree(self, nestedLinkList):
 		self.__nestedLinkList = nestedLinkList
 		#nestedLinkList = [['Screens', [['Result overview', 'url'], ['Engine results', 'url']]], ['Assets', [['VSM', 'url'], ['NdD', 'url']]]]
-		linkRendering =  flatten((lambda x: [html.P(str(x[0])+': ', className = 'no-break'), (lambda y: html.A(html.Button(y[0], className=y[2]), href=y[1])) /m/ x[1]]) /m/ nestedLinkList)
+		linkRendering =  flatten((lambda x: [html.P('', className = 'no-break'), (lambda y: html.A(html.Button(y[0], className=y[2]), href=y[1])) /m/ x[1]]) /m/ nestedLinkList)
 		super().setDashRendering(html.Div(className = 'navigation-pane', children = linkRendering))

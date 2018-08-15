@@ -12,6 +12,7 @@ aggregatedDropdown = Create(CDropdown, {'name': 'aggregatedDropdown',
                                                     ],
                                         'value': 'Separated',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 
@@ -26,6 +27,7 @@ moduleSelectorDropdown = Create(CDropdown, {'name': 'moduleSelectorDropdown',
                                                     ],
                                         'value': 'Scenario Manager',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 
@@ -40,6 +42,7 @@ fileFormatDropdown = Create(CDropdown, {'name': 'fileFormatDropdown',
                                                     ],
                                         'value': 'Excel',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 
@@ -108,6 +111,7 @@ resolutionMeanResultsDropdown = Create(CDropdown, {'name': 'resolutionMeanResult
                                                     ],
                                         'value': 'hourly',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 
@@ -121,6 +125,7 @@ unitDropdown = Create(CDropdown, {'name': 'unitDropdown',
                                                     ],
                                         'value': 'MWh',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 
@@ -134,6 +139,7 @@ formatDropdown = Create(CDropdown, {'name': 'formatDropdown',
                                                     ],
                                         'value': 'Autoformat',
                                         'multi': False,
+                                        'clearable': False,
                                         'style': {'width': '100%'},
                                     })
 

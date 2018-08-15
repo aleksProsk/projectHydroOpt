@@ -262,7 +262,7 @@ dash_app = Dash(__name__, server=flask_app, url_base_pathname='/d/')
 
 print("start dash...")
 
-dash_app.title = 'HydroOpt2.0 Dev Tools'
+dash_app.title = 'HydroOpt2.0'
 dash_app.layout = html.Div(id='page-content', children=[dcc.Location(id='url', refresh=False), dt0])
 
 dash_app.css.config.serve_locally = False

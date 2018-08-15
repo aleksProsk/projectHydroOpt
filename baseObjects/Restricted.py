@@ -47,6 +47,11 @@ class CSafeDict(CRestricted):
     def get(self, s): return self.__d[s]
     def getDict(self): return self.__d
     def set(self, key, value): self.__d[key] = value
+	def contains(self, key):
+		if key in self.__d:
+			return True
+		else:
+			return False
 
 class CSafeNP(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
