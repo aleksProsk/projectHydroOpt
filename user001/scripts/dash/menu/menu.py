@@ -29,9 +29,9 @@ if args.contains('selected'):
         menu.addItem('Third', ['Save', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
         menu.addItem('Third', ['Preferences', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Model',  'menu-item'])
     elif args.get('selected') == 'Utilities':
-        menu.addItem('Third', ['Price Scenario Generator', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities',  'menu-item'])
-        menu.addItem('Third', ['CSV Editor', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities',  'menu-item'])
-        menu.addItem('Third', ['Profile Editor', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities',  'menu-item'])
-        menu.addItem('Third', ['Hedge Decomposer', '/d/DisplayScreen@screen=hedgeDecomposer&selected=Utilities',  'menu-item-active' if args.get('screen') == 'hedgeDecomposer' else 'menu-item'])
+        menu.addItem('Third', ['Price Scenario Generator', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities', 'menu-item'])
+        menu.addItem('Third', ['CSV Editor', '/d/DisplayScreen@screen='+args.get('screen')+'&selected=Utilities', 'menu-item'])
+        menu.addItem('Third', ['Profile Editor', '/d/DisplayScreen@screen=profileEditor&selected=Utilities', 'menu-item-active' if args.get('screen') == 'profileEditor' else 'menu-item'])
+        menu.addItem('Third', ['Hedge Decomposer', '/d/DisplayScreen@screen=hedgeDecomposer&selected=Utilities', 'menu-item-active' if args.get('screen') == 'hedgeDecomposer' else 'menu-item'])
 
 return menu.getNestedList()
