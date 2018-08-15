@@ -41,12 +41,12 @@ class CRestricted(object):
 	def getUser(self): return self.__user
 
 class CSafeDict(CRestricted):
-    def __init__(self, dict, user=CUser()):
-        super().__init__(user)
-        self.__d = dict
-    def get(self, s): return self.__d[s]
-    def getDict(self): return self.__d
-    def set(self, key, value): self.__d[key] = value
+	def __init__(self, dict, user=CUser()):
+		super().__init__(user)
+		self.__d = dict
+	def get(self, s): return self.__d[s]
+	def getDict(self): return self.__d
+	def set(self, key, value): self.__d[key] = value
 	def contains(self, key):
 		if key in self.__d:
 			return True
