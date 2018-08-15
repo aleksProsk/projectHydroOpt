@@ -1,6 +1,6 @@
 log.print("starting renderer")
 
-hedgeProfileEditorFrame = CFrame('Hedge Profile', width=1.0, height=0.5)
+hedgeProfileEditorFrame = CFrame('Hedge Profile', width=1.0, height=0.3)
 
 content = Create(CContainer, {'name': 'content', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'padding': '0 10% 0 10%'}})
 
@@ -164,13 +164,18 @@ hedgeProfileEditorFrame.aChild(workDayContainer)
 hedgeProfileEditorFrame.aChild(saturdayContainer)
 hedgeProfileEditorFrame.aChild(sundayContainer)
 
-buttonsContainer = Create(CContainer, {'name': 'buttonscontainer', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'flex-end', 'width': '100%', 'marginLeft': '50%'}})
+buttonsContainer = Create(CContainer, {'name': 'buttonscontainer', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '100%'}})
 
+okButton = Create(CButton, {'name': 'okButton', 'link': '/d/DisplayScreen@screen=index&asset=Alperia-VSM',
+                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
+                            'text': 'OK'})
 backButton = Create(CButton, {'name': 'backButton', 'link': '/d/DisplayScreen@screen=index&asset=Alperia-VSM',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Back'})
 
+buttonsContainer.aChild(okButton)
 buttonsContainer.aChild(backButton)
 
 myScreen = CPage('Hedge Profile Editor')
