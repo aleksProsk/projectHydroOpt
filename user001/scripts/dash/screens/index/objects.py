@@ -16,7 +16,11 @@ objects = [
         'type': 'CChart',
     },
     {
-        'object': 'mySelectList',
-        'type': 'CSelectList',
+        'object': 'displayDropdown',
+        'type': 'CDropdown',
+    },
+    {
+        'object': 'revenueAndRiskGraphFigure',
+        'type': 'CHist',
     },
 ]

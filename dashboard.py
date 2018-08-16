@@ -63,8 +63,10 @@ safeSplit = Restricted.safeSplit
 CSafeMenu = Restricted.CSafeMenu
 CSafeList = Restricted.CSafeList
 
+globalDict = CSafeDict()
+
 from components import DashComponent, Chart, Text, Container, StopWaitingForGraphics, DataTable, DatePickerRange, DatePickerSingle, Dropdown, Slider, RangeSlider, InputComponent
-from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image, Modal, SelectList
+from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image, Modal, SelectList, Hist
 CDashComponent = DashComponent.CDashComponent
 CChart = Chart.CChart
 CText = Text.CText
@@ -95,6 +97,7 @@ CPieChart = PieChart.CPieChart
 CImage = Image.CImage
 CModal = Modal.CModal
 CSelectList = SelectList.CSelectList
+CHist = Hist.CHist
 
 @infix.div_infix
 def m(f,x): return list(map(f,x))
@@ -152,16 +155,10 @@ def load_hydropt_data(filepath):
 class CHydropt(CRestricted):
 	def __init__(self, user):
 		super().__init__(user)
-		self.__assetNames = {
-			'Alperia-VSM': 'Valle Selva Meloni',
-			'Alpiq-FMHL': 'Hongrin-Léman',
-			'TAH-TM': 'Testmodell'}
 	def getData(self, filepath): 
 		#todo: dynamsieren
 		pathLookup = {
-			'Alperia-VSM': 'models\\vsm.mod',
-			'Alpiq-FMHL': 'models\\FMHLplus.mod',
-			'TAH-TM': 'models\\Testmodell.mod'}
+			'model': 'models\\AllInOneTestMOPS8Hydropt110607eIP3.mod'}
 		return load_hydropt_data(pathLookup[filepath])
 	def getAssetName(self, asset): return self.__assetNames[asset]
 
@@ -224,6 +221,8 @@ def load_script_uid(scriptpath, name, uid, args):
 		'CSafeMenu': CSafeMenu,
 		'CModal': CModal,
 		'CSelectList': CSelectList,
+		'CHist': CHist,
+		'globalDict': globalDict,
 		'args': CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
 	
@@ -437,6 +436,8 @@ def createUpdateCallback(uid, screen):
 			inputLst.append(Input(id, 'figure'))
 		elif obj['type'] == 'CImage':
 			inputLst.append(Input(id, 'children'))
+		elif obj['type'] == 'CHist':
+			inputLst.append(Input(id, 'figure'))
 		else:
 			num = 0
 		for i in range(num):
@@ -506,6 +507,8 @@ def createUpdateCallback(uid, screen):
 					object.update(args[i])
 				elif type == 'CImage':
 					object.update(args[i])
+				elif type == 'CHist':
+					object.update(args[i])
 			return outputId
 
 # find out all the screen names
@@ -525,7 +528,7 @@ byte_code = compile_restricted(
 	mode = 'exec'
 )
 additional_globals = {
-	'date': date, 'timedelta': timedelta, 'datetime': datetime, 'log': CSafeLog(None),
+	'date': date, 'timedelta': timedelta, 'datetime': datetime, 'log': CSafeLog(None), 'globalDict': globalDict, 'CSafeNP': CSafeNP(),
 	'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io, 'CSafeFigure': CSafeFigure, 'CSafeDict': CSafeDict, 'CSafePoint': CSafePoint
 }
 safe_globals = safe_builtins
@@ -553,7 +556,7 @@ for screen in screenNames:
 	additional_globals = {
 		'date': date, 'timedelta': timedelta, 'datetime': datetime, 'screenVariables': dictionaryOfAllScreenVariables["0"][screen], 'log': CSafeLog(None), 'screen': screen,
 		'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io, 'CSafeFigure': CSafeFigure, 'CSafeDict': CSafeDict, 'CSafePoint': CSafePoint, 'time': time,
-		'getNameFromId' : getNameFromId, 'CSafeList': CSafeList
+		'getNameFromId' : getNameFromId, 'CSafeList': CSafeList, 'globalDict': globalDict, 'CSafeNP': CSafeNP(),
 	}
 	safe_globals = safe_builtins
 	safe_globals.update(additional_globals)

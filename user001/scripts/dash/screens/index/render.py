@@ -1,5 +1,8 @@
 log.print("starting renderer")
 
+hydroptModel = hydropt.getData('model')
+globalDict.set('hydroptModel', hydroptModel)
+
 assetsFrame = CFrame('Assets', width=0.4, height=0.25)
 
 mainMap = Create(CMap, {'name': 'mainMap', 'style': {'width': '37%', 'marginLeft': '0.75vw'}})
@@ -66,9 +69,8 @@ revenueAndRiskContent.aChild(revenueAndRiskText)
 
 revenueAndRiskGraph = Create(CContainer, {'name': 'revenueAndRiskGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
-revenueAndRiskGraphFigure = Create(CChart, {'name': 'revenueAndRiskGraphFigure', 'title': '', 'style': {'width': '400', 'height': '400'},
-                          'rows': [ [[1]] ], 'headers': ['Revenue And Risk'], 'rowCaptions': ['697.93'], 'xAxis': 'Revenue Hedged [Mio. EUR]', 'yAxis': 'Scenarios',
-                                            'showLegend': 'False'})
+revenueAndRiskGraphFigure = Create(CHist, {'name': 'revenueAndRiskGraphFigure', 'title': '', 'style': {'width': '400', 'height': '400'},
+                          'x': [], 'xAxis': 'Revenue Hedged [Mio. EUR]', 'yAxis': 'Scenarios', 'showlegend': 'False'})
 
 revenueAndRiskGraphButtons = Create(CContainer, {'name': 'revenueAndRiskGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -93,12 +95,25 @@ revenueAndRiskFrame.aChild(revenueAndRiskContent)
 
 displayFrame = CFrame('Display', width=0.1, height=0.41)
 
-mySelectList = Create(CSelectList, {'name': 'mySelectList', 'labels': ['All', '1', '2', '3'],
-                                    'containerStyle': {'display': 'flex', 'flexDirection': 'column', 'width': '93%', 'background': 'rgb(245, 245, 245)', 'margin-top': '5%'},
-                                    'labelStyle': {'background': 'rgb(245, 245, 245)', 'width': '100%', 'border': '1px solid black', 'color': 'black', 'padding': '5px 0 5px 5px'},
-                                    'selectedLabelStyle': {'background': '#AAA', 'width': '100%', 'border': '1px solid black', 'color': 'white', 'padding': '5px 0 5px 5px'}})
+shortnames = CSafeList(CSafeList(lst=hydroptModel.Asset.Shortname).get(0))
+dropdownList = CSafeList()
+i = 0
+while i < shortnames.len():
+    tDict = CSafeDict(dct={})
+    tDict.set('label', shortnames.get(i))
+    tDict.set('value', shortnames.get(i))
+    dropdownList.append(tDict.getDict())
+    i = i + 1
+displayDropdown = Create(CDropdown, {'name': 'displayDropdown',
+                                        'options': dropdownList.getList(),
+                                        'value': [''],
+                                        'multi': True,
+                                        'clearable': True,
+                                        'placeholder': 'Select assets',
+                                        'style': {'width': '100%'},
+                                    })
 
-displayFrame.aChild(mySelectList)
+displayFrame.aChild(displayDropdown)
 
 currentPowerFrame = CFrame('Current Power [MW]', width=0.3, height=0.2)
 

@@ -82,7 +82,6 @@ class CChart(CDashComponent):
 			title=yAxis,
 		)
 	def __setFigure(self):
-		print(self.__data)
 		self.__figure = {'data': self.__data, 'layout': self.__layout}
 	def update(self, value):
 		return

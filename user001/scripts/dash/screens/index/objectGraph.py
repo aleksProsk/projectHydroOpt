@@ -140,16 +140,17 @@ d = [
 },
 {
     'output': {
-        'object': 'mySelectList',
-        'param': 'children',
-        'type': 'CSelectList',
+        'object': 'revenueAndRiskGraphFigure',
+        'param': 'figure',
+        'type': 'CHist',
     },
     'input': [
         {
-            'object': 'mySelectList',
-            'param': 'n_clicks',
-            'type': 'CSelectList-labels-4',
+            'object': 'displayDropdown',
+            'param': 'value',
+            'type': 'CDropdown',
         },
+
     ],
-    'callback': 'selectListInteraction',
+    'callback': 'renderRevenueAndRiskGraphFigure',
 }]

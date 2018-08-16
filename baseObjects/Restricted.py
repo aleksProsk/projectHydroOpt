@@ -41,12 +41,13 @@ class CRestricted(object):
 	def getUser(self): return self.__user
 
 class CSafeDict(CRestricted):
-	def __init__(self, dict, user=CUser()):
+	def __init__(self, dct={}, user=CUser()):
 		super().__init__(user)
-		self.__d = dict
+		self.__d = dct
 	def get(self, s): return self.__d[s]
 	def getDict(self): return self.__d
-	def set(self, key, value): self.__d[key] = value
+	def set(self, key, value):
+		self.__d[key] = value
 	def contains(self, key):
 		if key in self.__d:
 			return True
@@ -61,13 +62,17 @@ class CSafeNP(CRestricted):
 	def vstack(self, v): return np.vstack(v)
 	def arange(self, stop, start=0, step=1, dtype=None): return np.arange(start=start, stop=stop, step=step, dtype=dtype)
 	def size(self, v): return v.size
-	def array(self, v): return np.array(v)
+	def array(self, v):
+		if isinstance(v, int) or isinstance(v, float):
+			return np.array([v])
+		else:
+			return np.array(v)
 	def reshape(self, v, x, y): return v.reshape(x, y)
 	def transpose(self, v): return np.transpose(v)
 
 
 class CSafeFigure(CRestricted):
-	def __init__(self, user=CUser(), figure={}):
+	def __init__(self, figure={}, user=CUser()):
 		super().__init__(user)
 		self.__figure = copy.deepcopy(figure)
 	def restrict(self, value):
@@ -95,7 +100,6 @@ class CSafeFigure(CRestricted):
 		except Exception as e:
 			print('PLEASE ADD ONLY NUMBERS!!!')
 	def setLineType(self, type = 'linear', num = 0, smoothing = 0.65, deg = 2):
-		print(self.__figure)
 		if type == 'polyfit':
 			z = np.polyfit(self.__figure['data'][num]['x'], self.__figure['data'][num]['y'], deg)
 			f = np.poly1d(z)
@@ -152,7 +156,7 @@ def safeSplit(separator, string, num):
 	return string.split(separator)[num]
 
 class CSafeMenu(CRestricted):
-	def __init__(self, user = CUser(), menu = {}):
+	def __init__(self, menu = {}, user = CUser()):
 		super().__init__(user)
 		self.__menu = menu
 	def addSubmenu(self, submenu):
@@ -168,7 +172,7 @@ class CSafeMenu(CRestricted):
 		return nestedList
 
 class CSafeList(CRestricted):
-	def __init__(self, user = CUser(), lst = []):
+	def __init__(self, lst = [], user = CUser()):
 		super().__init__(user)
 		self.__lst = list(lst)
 	def set(self, position, value):
