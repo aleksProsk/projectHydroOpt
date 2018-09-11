@@ -203,7 +203,7 @@ def FlushProfitScenarios(pos):
     ##TODO: fix this
     curChart.setChart(rows=[[1]], headers=[''], rowCaptions=[Rev], title='Revenue unhadged', type='bar', barmode='stack',
 						  style={'width': '550', 'height': '400'}, xAxis='Revenue unhedged [Mio. EUR]', yAxis='Scenarios', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Time', 'Revenue unhedged [Mio. EUR]'], 'rows': [Rev], 'titles': [1]})
+    dataTable = CSafeDict({'headers': [' ', 'Revenue unhedged [Mio. EUR]'], 'rows': [[1], Rev]})
     return curChart.getValue()
 
 def FlushPriceScenarios(pos):
@@ -809,13 +809,8 @@ def buildModalTable(n_clicks):
             tmp = dt.get(i)
             dt.set(i, tmp.getList())
             i = i + 1
-        log.print(dt.getList())
         tempDF.define(dt.getList(), dataTable.get('headers'))
     else:
         rows = CSafeList(dataTable.get('rows'))
-        i = 1
-        while (i < CSafeList(dataTable.get('headers')).len()):
-            rows.append('')
-            i = i + 1
         tempDF.define([rows.getList()], dataTable.get('headers'))
     return tempDF.to_dict('records')

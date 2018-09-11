@@ -39,7 +39,7 @@ $(document).ready(function () {
                             BalloonContentLayout = ymaps.templateLayoutFactory.createClass(
                                 '<div style="margin: 10px;">' +
                                 '<b>' + arr[1] + '</b><br />' +
-                                '<button onclick="location.href=\'http://localhost:5000/d/DisplayScreen@screen=details&asset=' + arr[1] + '\';">Details</button>' +
+                                '<button onclick="location.href=\'http://localhost:5000/d/DisplayScreen@screen=details&asset=' + arr[1] + '\';">Results</button>' +
                                 '</div>', {
                                     build: function () {
                                         BalloonContentLayout.superclass.build.call(this);
@@ -53,7 +53,7 @@ $(document).ready(function () {
                             BalloonContentLayout = ymaps.templateLayoutFactory.createClass(
                                 '<div style="margin: 10px;">' +
                                 '<b>' + arr[1] + '</b><br />' +
-                                '<button onclick="location.href=\'http://localhost:5000/d/DisplayScreen@screen=editor&asset=' + arr[1] + '\';">Details</button>' +
+                                '<button onclick="location.href=\'http://localhost:5000/d/DisplayScreen@screen=editor&asset=' + arr[1] + '\';">Editor</button>' +
                                 '</div>', {
                                     build: function () {
                                         BalloonContentLayout.superclass.build.call(this);
