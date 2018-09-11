@@ -203,7 +203,7 @@ def FlushProfitScenarios(pos):
     ##TODO: fix this
     curChart.setChart(rows=[[1]], headers=[''], rowCaptions=[Rev], title='Revenue unhadged', type='bar', barmode='stack',
 						  style={'width': '550', 'height': '400'}, xAxis='Revenue unhedged [Mio. EUR]', yAxis='Scenarios', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Revenue unhedged [Mio. EUR]'], 'rows': [Rev], 'titles': [1]})
+    dataTable = CSafeDict({'headers': ['Time', 'Revenue unhedged [Mio. EUR]'], 'rows': [Rev], 'titles': [1]})
     return curChart.getValue()
 
 def FlushPriceScenarios(pos):
@@ -223,7 +223,7 @@ def FlushPriceScenarios(pos):
     ##TODO: add more lines on chart
     curChart.setChart(rows=[Price], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Price scenarios', type='line', barmode='stack',
 						  style={'width': '550', 'height': '400'}, xAxis='', yAxis='Weekly Average [EUR/MWh]', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Weekly Average [EUR/MWh]'], 'rows': [Price], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Weekly Average [EUR/MWh]'], 'rows': [Price], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushReservoirScenarios(pos):
@@ -246,7 +246,7 @@ def FlushReservoirScenarios(pos):
     ##TODO: add more lines on chart
     curChart.setChart(rows=[R], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Reservoirs scenarios', type='line', barmode='stack',
 						  style={'width': '550', 'height': '400'}, xAxis='', yAxis='Reservoir Level [GWh]', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Reservoir Level [GWh]'], 'rows': [R], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Reservoir Level [GWh]'], 'rows': [R], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushInflowScenarios(pos):
@@ -268,7 +268,7 @@ def FlushInflowScenarios(pos):
     ##TODO: add more lines on chart
     curChart.setChart(rows=[I], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Inflow scenarios', type='line', barmode='stack',
                       style={'width': '550', 'height': '400'}, xAxis='', yAxis='Inflow [MWh]', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Inflow [MWh]'], 'rows': [I], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Inflow [MWh]'], 'rows': [I], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushEngine(pos, Tag, Type, DisplayType):
@@ -362,7 +362,7 @@ def FlushEngine(pos, Tag, Type, DisplayType):
         FScaled.set(i, CSafeList(FScaled.get(i)).get(0))
         i = i + 1
     curChart.addTrace(x=pd.DatetimeIndex(t.getList()), y=FScaled.getList(), type='line', hoverinfo='x+y', yaxis=None)
-    dataTable = CSafeDict({'headers': ['Market Price [scaled]', 'Engine Operation [MW]'], 'rows': [FScaled.getList(), data], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Market Price [scaled]', 'Engine Operation [MW]'], 'rows': [FScaled.getList(), data], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushReservoir(pos, Tag, DisplayType):
@@ -431,7 +431,7 @@ def FlushReservoir(pos, Tag, DisplayType):
     if Tag.len() == 0:
         curChart.setChart(rows=[data.getList()], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Reservoir Level [GWh]', type='line', barmode='group',
                           style={'width': '550', 'height': '400'}, xAxis='', yAxis='[GWh]', showLegend=False, hoverinfo='x+y', error={})
-        dataTable = CSafeDict({'headers': ['Reservoir Level [GWh]'], 'rows': [data.getList()], 'titles': pd.DatetimeIndex(t.getList())})
+        dataTable = CSafeDict({'headers': ['Time', 'Reservoir Level [GWh]'], 'rows': [data.getList()], 'titles': pd.DatetimeIndex(t.getList())})
     else:
         curChart.setChart(rows=[data.getList()], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Reservoir Level [GWh] and Losses [GWh]', type='line', barmode='group',
                           style={'width': '550', 'height': '400'}, xAxis='', yAxis='[GWh]', showLegend=False, hoverinfo='x+y', error={})
@@ -442,7 +442,7 @@ def FlushReservoir(pos, Tag, DisplayType):
             Loss.set(i, CSafeList(Loss.get(i)).get(0))
             i = i + 1
         curChart.addTrace(x=pd.DatetimeIndex(t.getList()), y=Loss.getList(), type='line', hoverinfo='x+y', yaxis={'title': '[MWh]', 'side': 'right', 'overlaying': 'y'})
-        dataTable = CSafeDict({'headers': ['Reservoir Level [GWh]', 'Losses [MWh]'], 'rows': [data.getList(), Loss.getList()], 'titles': pd.DatetimeIndex(t.getList())})
+        dataTable = CSafeDict({'headers': ['Time', 'Reservoir Level [GWh]', 'Losses [MWh]'], 'rows': [data.getList(), Loss.getList()], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushLosses(pos, Tag, DisplayType):
@@ -510,7 +510,7 @@ def FlushLosses(pos, Tag, DisplayType):
     curChart.setChart(rows=[S.getList()], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Infiltration Loss and Spill [MWh]', type='line', barmode='group',
                       style={'width': '550', 'height': '400'}, xAxis='', yAxis='[MWh]', showLegend=False, hoverinfo='x+y', error={})
     curChart.addTrace(x=pd.DatetimeIndex(t.getList()), y=ILoss.getList(), type='line', hoverinfo='x+y', yaxis=None)
-    dataTable = CSafeDict({'headers': ['Infiltration Loss [MWh]', 'Spill [MWh]'], 'rows': [ILoss.getList(), S.getList()], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Infiltration Loss [MWh]', 'Spill [MWh]'], 'rows': [ILoss.getList(), S.getList()], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def FlushFlow(pos, Tag, DisplayType):
@@ -559,7 +559,7 @@ def FlushFlow(pos, Tag, DisplayType):
         i = i + 1
     curChart.setChart(rows=[O.getList()], headers=[''], rowCaptions=pd.DatetimeIndex(t.getList()), title='Flow [MWh]', type='bar', barmode='group',
                       style={'width': '550', 'height': '400'}, xAxis='', yAxis='[MWh]', showLegend=False, hoverinfo='x+y', error={})
-    dataTable = CSafeDict({'headers': ['Time'], 'rows': [O.getList()], 'titles': pd.DatetimeIndex(t.getList())})
+    dataTable = CSafeDict({'headers': ['Time', 'Flow [MWh]'], 'rows': [O.getList()], 'titles': pd.DatetimeIndex(t.getList())})
     return curChart.getValue()
 
 def turbinesButton(value):
@@ -795,17 +795,12 @@ def buildModalTable(n_clicks):
             dt.append(CSafeList([titles.get(i)]))
             i = i + 1
         i = 0
-        log.print(dt)
-        log.print(columnsList.len())
         while (i < columnsList.len()):
             column = CSafeList(columnsList.get(i))
             j = 0
             while (j < column.len()):
                 tmp = dt.get(j)
-                if i == columnsList.len() - 1:
-                    tmp.append(column.get(j) + tmp.get(-1))
-                else:
-                    tmp.append(column.get(j))
+                tmp.append(column.get(j))
                 dt.set(j, tmp)
                 j = j + 1
             i = i + 1
@@ -814,6 +809,7 @@ def buildModalTable(n_clicks):
             tmp = dt.get(i)
             dt.set(i, tmp.getList())
             i = i + 1
+        log.print(dt.getList())
         tempDF.define(dt.getList(), dataTable.get('headers'))
     else:
         rows = CSafeList(dataTable.get('rows'))
