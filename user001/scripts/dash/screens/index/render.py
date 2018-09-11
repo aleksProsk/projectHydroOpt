@@ -1,17 +1,54 @@
 log.print("starting renderer")
 
-hydroptModel = hydropt.getData('model')
-globalDict.set('hydroptModel', hydroptModel)
+latList = CSafeList([46.563371, 46.183447, 46.067888, 46.623189, 46.080639, 46.137034, 46.481873, 46.461194, 46.371179, 46.070118, 46.145847, 46.169434, 46.5782776, 47.229296, 47.369007])
+lonList = CSafeList([8.9612593, 7.2491351, 6.9303941, 10.1909703, 7.4023168, 7.5696649, 9.4516843, 8.3680963, 8.0014061, 6.8762443, 6.9671043, 8.1199813, 9.1179484, 7.5880925, 7.9783607])
+
+if globalDict.contains('hydroptModel'):
+    hydroptModel = globalDict.get('hydroptModel')
+else:
+    hydroptModel = hydropt.getData('model')
+    globalDict.set('hydroptModel', hydroptModel)
+if hydroptModel.nAssets == 1:
+    shortnames = CSafeList([hydroptModel.Asset.Shortname])
+    assets = CSafeList([hydroptModel.Asset])
+else:
+    shortnames = CSafeList(CSafeList(lst=hydroptModel.Asset.Shortname).get(0))
+    assets = CSafeList(CSafeList(lst=hydroptModel.Asset).get(0))
+dropdownList = CSafeList()
+drag = CSafeList()
+lat = CSafeList()
+lon = CSafeList()
+dropdownValue = CSafeList();
+i = 0
+i = 0
+while i < shortnames.len():
+    tDict = CSafeDict(dct={})
+    tDict.set('label', shortnames.get(i))
+    tDict.set('value', shortnames.get(i))
+    dropdownList.append(tDict.getDict())
+    drag.append(False)
+    pos = CSafeList(CSafeList(assets.get(i).Position).get(0))
+    if assets.get(i).MainFig.Check == 1.0:
+        dropdownValue.append(shortnames.get(i))
+    if pos.get(0) < 1.0:
+        pos.set(0, latList.get(i))
+    if pos.get(1) < 1.0:
+        pos.set(1, lonList.get(i))
+    lat.append(pos.get(0))
+    lon.append(pos.get(1))
+    i = i + 1
 
 assetsFrame = CFrame('Assets', width=0.4, height=0.25)
 
-mainMap = Create(CMap, {'name': 'mainMap', 'style': {'width': '37%', 'marginLeft': '0.75vw'}})
+#mainMap = Create(CMap, {'name': 'mainMap', 'style': {'width': '37%', 'marginLeft': '0.75vw'}})
+mainMap = Create(CYMap, {'name': 'mainMap', 'style': {'width': '100%', 'height': '45vh'},
+                         'names': shortnames.getList(), 'lat': lat.getList(), 'lon': lon.getList(), 'draggable': drag.getList()})
 
 assetsFrame.aChild(mainMap)
 
 controlFrame = CFrame('Control', width=0.2, height=0.25, style={'display': 'flex', 'flexDirection': 'column'})
 
-modellerButton = Create(CButton, {'name': 'modellerButton',
+modellerButton = Create(CButton, {'name': 'modellerButton', 'link': '/d/DisplayScreen@screen=modeller',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Modeller'})
@@ -31,12 +68,27 @@ batchManagerButton = Create(CButton, {'name': 'batchManagerButton', 'link': '/d/
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
                                       'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
                             'text': 'Batch Manager'})
+partnerButton = Create(CButton, {'name': 'partnerButton',
+                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
+                            'text': 'Partnerwerk manager'})
+liveUpdatesButton = Create(CButton, {'name': 'liveUpdatesButton',
+                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
+                            'text': 'Live updates'})
+greeksButton = Create(CButton, {'name': 'greeksButton',
+                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
+                            'text': 'Greeks'})
 
 controlFrame.aChild(modellerButton)
 controlFrame.aChild(scenarioManagerButton)
 controlFrame.aChild(schedulerButton)
 controlFrame.aChild(exportCenterButton)
 controlFrame.aChild(batchManagerButton)
+controlFrame.aChild(partnerButton)
+controlFrame.aChild(liveUpdatesButton)
+controlFrame.aChild(greeksButton)
 
 revenueAndRiskFrame = CFrame('Revenue and Risk', width=0.4, height=0.25)
 
@@ -45,10 +97,10 @@ revenueAndRiskContent = Create(CContainer, {'name': 'revenueAndRiskContent', 'st
 revenueAndRiskText = Create(CContainer, {'name': 'revenueAndRiskText', 'style': {'display': 'flex', 'flexDirection': 'column', 'marginLeft': '1vw', 'flexBasis': '30%'}})
 
 startDateTitle = Create(CText, {'name': 'startDateTitle', 'text': 'Start Date', 'style': {'margin-left': '0', 'margin-bottom': '0'}})
-startDate = Create(CText, {'name': 'startDate', 'text': '01-Oct-2025', 'style': {'margin-left': '0', 'margin-top': '0'}})
+startDate = Create(CText, {'name': 'startDate', 'text': '', 'style': {'margin-left': '0', 'margin-top': '0'}})
 
 endDateTitle = Create(CText, {'name': 'endDateTitle', 'text': 'End Date', 'style': {'margin-left': '0', 'margin-bottom': '0'}})
-endDate = Create(CText, {'name': 'endDate', 'text': '01-Oct-2031', 'style': {'margin-left': '0', 'margin-top': '0'}})
+endDate = Create(CText, {'name': 'endDate', 'text': '', 'style': {'margin-left': '0', 'margin-top': '0'}})
 
 averageRevenueTitle = Create(CText, {'name': 'averageRevenueTitle', 'text': 'Average Revenue', 'style': {'margin-left': '0', 'margin-bottom': '0'}})
 averageRevenue = Create(CText, {'name': 'averageRevenue', 'text': '697.93 Mio. EUR', 'style': {'margin-left': '0', 'margin-top': '0'}})
@@ -95,18 +147,9 @@ revenueAndRiskFrame.aChild(revenueAndRiskContent)
 
 displayFrame = CFrame('Display', width=0.1, height=0.41)
 
-shortnames = CSafeList(CSafeList(lst=hydroptModel.Asset.Shortname).get(0))
-dropdownList = CSafeList()
-i = 0
-while i < shortnames.len():
-    tDict = CSafeDict(dct={})
-    tDict.set('label', shortnames.get(i))
-    tDict.set('value', shortnames.get(i))
-    dropdownList.append(tDict.getDict())
-    i = i + 1
 displayDropdown = Create(CDropdown, {'name': 'displayDropdown',
                                         'options': dropdownList.getList(),
-                                        'value': [''],
+                                        'value': dropdownValue.getList(),
                                         'multi': True,
                                         'clearable': True,
                                         'placeholder': 'Select assets',
@@ -120,8 +163,7 @@ currentPowerFrame = CFrame('Current Power [MW]', width=0.3, height=0.2)
 currentPowerGraph = Create(CContainer, {'name': 'currentPowerGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 currentPowerGraphFigure = Create(CChart, {'name': 'currentPowerGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[1000]] ], 'headers': ['Current Power'], 'rowCaptions': ['KWO'],
-                                            'showLegend': 'False'})
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'showLegend': 'False'})
 
 currentPowerGraphButtons = Create(CContainer, {'name': 'currentPowerGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -147,8 +189,7 @@ powerPlanningFrame = CFrame('Power Planning [MW]', width=0.3, height=0.2)
 powerPlanningGraph = Create(CContainer, {'name': 'powerPlanningGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 powerPlanningGraphFigure = Create(CChart, {'name': 'powerPlanningGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[1000, 1000]] ], 'headers': ['Current Power'], 'rowCaptions': [1, 10], 'type': 'line',
-                                            'showLegend': 'False'})
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'type': 'line','showLegend': 'False'})
 
 powerPlanningGraphButtons = Create(CContainer, {'name': 'powerPlanningGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -174,8 +215,7 @@ currentReservoirLevelFrame = CFrame('Current Reservoir Level [GVh]', width=0.3, 
 currentReservoirLevelGraph = Create(CContainer, {'name': 'currentReservoirLevelGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 currentReservoirLevelGraphFigure = Create(CChart, {'name': 'currentReservoirLevelGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[560]], [[30]] ], 'headers': ['Current Reservoir Level', 'Maximum Reservoir Level'], 'rowCaptions': ['KWO'], 'barmode': 'stack',
-                                                   'showLegend': 'True'})
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'barmode': 'stack', 'showLegend': 'True'})
 
 currentReservoirLevelGraphButtons = Create(CContainer, {'name': 'currentReservoirLevelGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -201,8 +241,7 @@ marginPriceFrame = CFrame('Margin Price [EUR/MWh]', width=0.3, height=0.2)
 marginPriceGraph = Create(CContainer, {'name': 'marginPriceGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 marginPriceGraphFigure = Create(CChart, {'name': 'marginPriceGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[160], [70], [65], [60], [55], [50]] ], 'headers': ['Gri2', 'H3H', 'Gri1Gri', 'H2', 'I1', 'Han1'], 'rowCaptions': ['Gri2', 'H3H', 'Gri1Gri', 'H2', 'I1', 'Han1'],
-                                                   'showLegend': False})
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'showLegend': False})
 
 marginPriceGraphButtons = Create(CContainer, {'name': 'marginPriceGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -228,7 +267,7 @@ reservoirCycleFrame = CFrame('Reservoir Cycle [GWh]', width=0.3, height=0.2)
 reservoirCycleGraph = Create(CContainer, {'name': 'reservoirCycleGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 reservoirCycleGraphFigure = Create(CChart, {'name': 'reservoirCycleGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[1], [10]] ], 'headers': [''], 'rowCaptions': [2, 5], 'type': 'line',
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'type': 'line',
                                                    'showLegend': False})
 
 reservoirCycleGraphButtons = Create(CContainer, {'name': 'reservoirCycleGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
@@ -255,8 +294,7 @@ energyPlanningPeakFrame = CFrame('Energy Planning Peak/Off-Peak [GWh]', width=0.
 energyPlanningPeakGraph = Create(CContainer, {'name': 'reservoirCycleGraph', 'style': {'display': 'flex', 'flexDirection': 'column', 'flexBasis': '70%', 'justifyContent': 'center', 'alignItems': 'center'}})
 
 energyPlanningPeakGraphFigure = Create(CChart, {'name': 'energyPlanningPeakGraphFigure', 'title': '', 'style': {'width': '450', 'height': '300'},
-                          'rows': [ [[1], [10]] ], 'headers': [''], 'rowCaptions': [2, 5], 'type': 'line',
-                                                   'showLegend': False})
+                          'rows': [], 'headers': [], 'rowCaptions': [], 'type': 'line', 'showLegend': False})
 
 energyPlanningPeakGraphButtons = Create(CContainer, {'name': 'energyPlanningPeakGraphButtons', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between', 'width': '80%'}})
 
@@ -297,6 +335,27 @@ modalContent.aChild(modalGraph)
 
 myGraphModal.aChild(modalContent)
 
+myTableModal = Create(CModal, {'name': 'myTableModal'})
+
+modalCloser1 = Create(CText, {'name': 'modalCloser1', 'text': 'Close', 'style': {'font-size': '28px', 'color': '#F2F2F2', 'margin-bottom': '1vh', 'font-weight': 'bold', 'left': '67%',
+                                                                                'position': 'fixed', 'top': '15%'}})
+myTableModal.aChild(modalCloser1)
+
+modalContent1 = Create(CContainer, {'name': 'modalContent1', 'style': {'background-color': '#F2F2F2', 'padding': '20px', 'border': '1px solid #888', 'width': '40%', 'position': 'fixed',
+                                                                     'left': '30%', 'top': '20%', 'display': 'flex', 'flexDirection': 'column', 'align-items': 'center', 'justify-content': 'center'}})
+
+modalTable = Create(CDataTable, {'name': 'modalTable', 'row_selectable': False, 'style': {'width': '100%', 'height': '100%'}})
+
+saveButton = Create(CButton, {'name': 'saveButton', 'download': 'table.csv',
+                              'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
+                                      'fontSize': '0.7vmax', 'marginTop': '1vh', 'width': '10vw'},
+                              'text': 'Save Table'})
+
+modalContent1.aChild(modalTable)
+modalContent1.aChild(saveButton)
+
+myTableModal.aChild(modalContent1)
+
 myScreen.aChild(assetsFrame)
 myScreen.aChild(controlFrame)
 myScreen.aChild(revenueAndRiskFrame)
@@ -308,6 +367,7 @@ myScreen.aChild(marginPriceFrame)
 myScreen.aChild(reservoirCycleFrame)
 myScreen.aChild(energyPlanningPeakFrame)
 myScreen.aChild(myGraphModal)
+myScreen.aChild(myTableModal)
 
 return myScreen
 

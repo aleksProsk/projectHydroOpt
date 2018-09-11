@@ -1,6 +1,6 @@
   ._dash-loading-callback {
     position: fixed;
-    z-index: 100;
+    z-index: 100000;
   }
 
   ._dash-loading-callback::after {
@@ -28,7 +28,7 @@
     background-color: rgba(255, 255, 255, 0.5);
     text-align: center;
     cursor: progress;
-    z-index: 100000;
+    z-index: 1000000;
 
     background-image: url(https://ibin.co/49njnJGmV7G3.gif);
     background-position: center center;

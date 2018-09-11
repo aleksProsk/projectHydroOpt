@@ -4,15 +4,15 @@ from components import DashComponent
 CDashComponent = DashComponent.CDashComponent
 
 class CChecklist(CDashComponent):
-	def __init__(self, inputStyle = {}, labelStyle = {}, options = [], style = {}, value = [],
+	def __init__(self, inputStyle = {}, labelStyle = {}, options = [], style = {}, value = [], labelClassName = '',
 				 name = None, screenName = None):
 		super().__init__(name, screenName)
-		self.setChecklist(inputStyle, labelStyle, options, style, value)
+		self.setChecklist(inputStyle, labelStyle, options, style, value, labelClassName)
 	def getValue(self):
 		return self.__value
 	def update(self, value):
 		self.__value = value
-	def setChecklist(self, inputStyle, labelStyle, options, style, value):
+	def setChecklist(self, inputStyle, labelStyle, options, style, value, labelClassName):
 		self.__options = options
 		self.__value = value
 		super().setDashRendering(dcc.Checklist(
@@ -22,4 +22,5 @@ class CChecklist(CDashComponent):
 			options=options,
 			style=style,
 			values=value,
+			labelClassName=labelClassName,
 		))

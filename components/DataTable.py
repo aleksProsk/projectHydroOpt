@@ -10,12 +10,12 @@ from components import DashComponent
 CDashComponent = DashComponent.CDashComponent
 
 class CDataTable(CDashComponent):
-	def __init__(self, rows = [''], headers = [''], row_selectable = True, filterable = True, sortable = True, editable = False, style = {},
+	def __init__(self, rows = [''], headers = [''], row_selectable = True, filterable = True, sortable = True, editable = False, style = {}, min_height = 387,
 				 name = None, screenName = None):
 		super().__init__(name, screenName)
 		self.__np = CSafeNP(super().getUser())
 		self.__df = CSafeDF(super().getUser())
-		self.setTable(rows, headers, row_selectable, filterable, sortable, editable, style)
+		self.setTable(rows, headers, row_selectable, filterable, sortable, editable, style, min_height)
 	def getRows(self): return self.__rows
 	def getHeaders(self): return self.__headers
 	def __setValues(self, rows):
@@ -41,7 +41,7 @@ class CDataTable(CDashComponent):
 				self.__rows.append(self.__np.reshape(self.__np.array(elem), -1, 1))
 			self.__setValues(self.__rows)
 			self.__df.define(self.__values, columns=self.__headers)
-	def setTable(self, rows, headers, row_selectable, filterable, sortable, editable, style):
+	def setTable(self, rows, headers, row_selectable, filterable, sortable, editable, style, min_height):
 		self.__setValues(rows)
 		self.__df.define(self.__values, columns=headers)
 		self.__selected_rows = []
@@ -53,6 +53,8 @@ class CDataTable(CDashComponent):
 			sortable=sortable,
 			selected_row_indices=[],
 			editable=editable,
+			min_height=min_height,
+			column_widths = [200, 200, 200, 200, 200, 200],
 		)
 		self.__rows = rows
 		self.__headers = headers

@@ -10,7 +10,7 @@
 
 
 print("imports...")
-import inspect, os
+import inspect, os, math, scipy, urllib
 from shutil import copyfile
 #os.environ["FLASK_APP"] = inspect.getfile(inspect.currentframe())
 os.environ["OCTAVE_EXECUTABLE"] = "C:\\Octave\\Octave-4.4.0\\bin\\octave-cli.exe"
@@ -18,12 +18,14 @@ import copy
 from oct2py import octave
 from flask import Flask
 from flask import send_from_directory
+from flask import request
 from dash import Dash
 from dash.dependencies import Input, Output, State
 import dash_html_components as html
 import dash_core_components as dcc
 import dash_table_experiments as dt
 import random
+import simplejson as json
 
 from pandas import DataFrame, DatetimeIndex
 import pandas as pd
@@ -62,11 +64,14 @@ CSafeLog = Restricted.CSafeLog
 safeSplit = Restricted.safeSplit
 CSafeMenu = Restricted.CSafeMenu
 CSafeList = Restricted.CSafeList
+CSafeMatlab = Restricted.CSafeMatlab
+CSafeStr = Restricted.CSafeStr
 
 globalDict = CSafeDict()
 
 from components import DashComponent, Chart, Text, Container, StopWaitingForGraphics, DataTable, DatePickerRange, DatePickerSingle, Dropdown, Slider, RangeSlider, InputComponent
-from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image, Modal, SelectList, Hist
+from components import TextArea, Checklist, RadioItems, Button, Upload, Map, TopologyMap, Frame, Page, Tabs, NavigationPane, Interval, PieChart, Image, Modal, SelectList, Hist, YMap
+from components import Topology, TopologyRedactor
 CDashComponent = DashComponent.CDashComponent
 CChart = Chart.CChart
 CText = Text.CText
@@ -98,6 +103,9 @@ CImage = Image.CImage
 CModal = Modal.CModal
 CSelectList = SelectList.CSelectList
 CHist = Hist.CHist
+CYMap = YMap.CYMap
+CTopology = Topology.CTopology
+CTopologyRedactor = TopologyRedactor.CTopologyRedactor
 
 @infix.div_infix
 def m(f,x): return list(map(f,x))
@@ -159,6 +167,8 @@ class CHydropt(CRestricted):
 		#todo: dynamsieren
 		pathLookup = {
 			'model': 'models\\AllInOneTestMOPS8Hydropt110607eIP3.mod'}
+			#'model': 'models\\engl.mod'}
+			#'model': 'models\\BER_.mod'}
 		return load_hydropt_data(pathLookup[filepath])
 	def getAssetName(self, asset): return self.__assetNames[asset]
 
@@ -222,7 +232,12 @@ def load_script_uid(scriptpath, name, uid, args):
 		'CModal': CModal,
 		'CSelectList': CSelectList,
 		'CHist': CHist,
+		'CSafeMatlab': CSafeMatlab(),
 		'globalDict': globalDict,
+		'CSafeStr': CSafeStr,
+		'CYMap': CYMap,
+		'CTopology': CTopology,
+		'CTopologyRedactor': CTopologyRedactor,
 		'args': CSafeDict(args, user=user)}
 	return load_script(scriptpath, globals, {}, name)
 	
@@ -285,7 +300,12 @@ JS_PATHS = [
 	'mynodefiles/myapp3/node_modules/jquery.mmenu/dist/js/jquery.mmenu.all.min.js',
 	'mynodefiles/myapp3/node_modules/flickity/dist/flickity.pkgd.min.js',
 	'mynodefiles/isotope-zeug/node_modules/isotope-layout/dist/isotope.pkgd.min.js',
-	'initialize-isotope.js']
+	'initialize-isotope.js',
+	'scripts.js',
+	'ymapsAPI.js',
+	'ymap.js',
+	'fabric.js',
+	'topology.js']
 
 (lambda x: copyfile(x, os.path.join(STATIC_FOLDER, os.path.basename(x)))) /m/ (CSS_PATHS + JS_PATHS)
 (lambda x: dash_app.css.append_css			({"external_url": STATIC_URL + x})) /m/ (os.path.basename /m/ CSS_PATHS)
@@ -308,6 +328,389 @@ def show_user_profile(username):
 def favicon():
 	return send_from_directory(os.path.join(flask_app.root_path, 'static'),
 							   'favicon.ico')
+
+tempMatlab = CSafeMatlab()
+@flask_app.route('/postmethod', methods = ['POST'])
+def get_post_javascript_data():
+	shortname = request.form['shortname']
+	lat = request.form['lat']
+	lon = request.form['lon']
+	print(shortname, lat, lon)
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	for i in range(assets.len()):
+		if assets.get(i).Shortname == shortname:
+			#print(assets.get(i).Position)
+			octave.eval('Data.Asset('+str(i+1)+').Position = [' + lat + ', ' + lon + ', 0, 0];')
+			#tempMatlab.setField(assets.get(i), 'Position', [[float(lat), float(lon), 0, 0]])
+			#print(assets.get(i).Position)
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	return shortname
+
+@flask_app.route('/selectElement', methods = ['POST'])
+def get_post_javascript_asset_selection():
+	name = request.form['name']
+	typ = request.form['type']
+	globalDict.set('selectedElement', name)
+	globalDict.set('selectedType', typ)
+	return name
+
+@flask_app.route('/postTopology', methods = ['POST'])
+def get_post_javascript_topology_data():
+	#TODO: TimeLags
+	names = request.form.getlist('names[]')
+	types = request.form.getlist('types[]')
+	x = request.form.getlist('x[]')
+	y = request.form.getlist('y[]')
+	operatesFrom = request.form.getlist('operatesFrom[]')
+	operatesTo = request.form.getlist('operatesTo[]')
+	assetName = request.form['assetName']
+	print(names)
+	print(types)
+	print(x)
+	print(y)
+	print(operatesFrom)
+	print(operatesTo)
+	print(assetName)
+	pos = -1
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	for i in range(assets.len()):
+		if assets.get(i).Shortname == assetName:
+			pos = i
+			break
+	if pos == -1:
+		return names[0]
+	#DELETE
+	#Reservoirs
+	while (True):
+		was = False
+		data = CSafeList(globalDict.get('hydroptModel').Asset)
+		if globalDict.get('hydroptModel').nAssets == 1:
+			assets = CSafeList([globalDict.get('hydroptModel').Asset])
+		else:
+			assets = CSafeList(lst=data.get(0))
+		if assets.get(pos).Topology.nRes == 1:
+			reservoirs = CSafeList([assets.get(pos).Reservoir])
+		else:
+			reservoirs = CSafeList(CSafeList(assets.get(pos).Reservoir).get(0))
+		for i in range(reservoirs.len()):
+			if reservoirs.get(i).Shortname not in names:
+				octave.eval('Top=Data.Asset('+str(pos+1)+').Topology; Top.nRes=Top.nRes-1; Top.Reservoir('+str(i+1)+')=[]; Data.Asset('+str(pos+1)+').Reservoir('+str(i+1)+')=[];')
+				octave.eval('Idx=find([Top.Engine.OperatesFrom]=='+str(i+1)+'); for i=Idx Top.Engine(i).OperatesFrom=0; end; Idx=find([Top.Engine.OperatesTo]=='+str(i+1)+');')
+				octave.eval('for i=Idx Top.Engine(i).OperatesTo=0; end; Idx=find([Top.Engine.OperatesFrom]>'+str(i+1)+');  for i=Idx Top.Engine(i).OperatesFrom=Top.Engine(i).OperatesFrom-1; end')
+				octave.eval('Idx=find([Top.Engine.OperatesTo]>'+str(i+1)+'); for i=Idx Top.Engine(i).OperatesTo=Top.Engine(i).OperatesTo-1; end ')
+				octave.eval('if Top.nFlows>0 Idx=find([Top.Flow.OperatesFrom]=='+str(i+1)+'); for i=Idx Top.Flow(i).OperatesFrom=0; end; Idx=find([Top.Flow.OperatesTo]=='+str(i+1)+'); for i=Idx Top.Flow(i).OperatesTo = 0; end; end')
+				octave.eval('if Top.nFlows>0 Idx=find([Top.Flow.OperatesFrom]>'+str(i+1)+'); for i=Idx Top.Flow(i).OperatesFrom=Top.Flow(i).OperatesFrom-1; end; Idx = find([Top.Flow.OperatesTo]>'+str(i+1)+'); for i=Idx Top.Flow(i).OperatesTo=Top.Flow(i).OperatesTo-1; end; end')
+				octave.eval('Idx=find([Top.Reservoir.SpillsToRes]=='+str(i+1)+'); for i=Idx Top.Reservoir(i).SpillsToRes=0; end; Idx=find([Top.Reservoir.SpillsToRes]>'+str(i+1)+'); for i=Idx Top.Reservoir(i).SpillsToRes=Top.Reservoir(i).SpillsToRes-1; end')
+				octave.eval('Data.Asset('+str(pos+1)+').Topology=Top;')
+				globalDict.set('hydroptModel', octave.pull('Data'))
+				was = True
+				break
+		if was == False:
+			break
+	#Flows
+	if assets.get(pos).Topology.nFlows > 0:
+		while (True):
+			was = False
+			data = CSafeList(globalDict.get('hydroptModel').Asset)
+			if globalDict.get('hydroptModel').nAssets == 1:
+				assets = CSafeList([globalDict.get('hydroptModel').Asset])
+			else:
+				assets = CSafeList(lst=data.get(0))
+			if assets.get(pos).Topology.nFlows == 1:
+				flows = CSafeList([assets.get(pos).Flow])
+			else:
+				flows = CSafeList(CSafeList(assets.get(pos).Flow).get(0))
+			for i in range(flows.len()):
+				if flows.get(i).Shortname not in names:
+					octave.eval('Top=Data.Asset('+str(pos+1)+').Topology; Top.nFlows=Top.nFlows-1; Top.Flow('+str(i+1)+')=[]; Data.Asset('+str(pos+1)+').Flow('+str(i+1)+')=[]; Data.Asset('+str(pos+1)+').Topology=Top;')
+					globalDict.set('hydroptModel', octave.pull('Data'))
+					was = True
+					break
+			if was == False:
+				break
+	#Turbines and pumps
+	while (True):
+		was = False
+		data = CSafeList(globalDict.get('hydroptModel').Asset)
+		if globalDict.get('hydroptModel').nAssets == 1:
+			assets = CSafeList([globalDict.get('hydroptModel').Asset])
+		else:
+			assets = CSafeList(lst=data.get(0))
+		if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps == 1:
+			engines = CSafeList([assets.get(pos).Engine])
+		else:
+			engines = CSafeList(CSafeList(assets.get(pos).Engine).get(0))
+		for i in range(engines.len()):
+			if engines.get(i).Shortname not in names:
+				if i < assets.get(pos).Topology.nTurbines:
+					octave.eval('Top=Data.Asset('+str(pos+1)+').Topology; Top.nTurbines=Top.nTurbines-1; Top.Engine('+str(i+1)+')=[]; Data.Asset('+str(pos+1)+').Engine('+str(i+1)+')=[];')
+					octave.eval('if ~isempty(Data.Asset('+str(pos+1)+').EngineAlternatives) Data.Asset('+str(pos+1)+').EngineAlternatives('+str(i+1)+',:) = []; Data.Asset('+str(pos)+').EngineAlternatives(:,'+str(i+1)+') = []; end')
+				else:
+					octave.eval('Top=Data.Asset('+str(pos+1)+').Topology; Top.nPumps=Top.nPumps-1; Top.Engine('+str(i+1)+')=[]; Data.Asset('+str(pos+1)+').Engine('+str(i+1)+')=[];')
+					octave.eval('if ~isempty(Data.Asset('+str(pos+1)+').EngineAlternatives) Data.Asset('+str(pos+1)+').EngineAlternatives('+str(i+1)+',:) = []; Data.Asset('+str(pos+1)+').EngineAlternatives(:,'+str(i+1)+') = []; end;')
+				octave.eval('Data.Asset(' + str(pos + 1) + ').Topology=Top;')
+				globalDict.set('hydroptModel', octave.pull('Data'))
+				was = True
+				break
+		if was == False:
+			break
+	#ADD
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	names_r = []
+	names_t = []
+	names_p = []
+	names_f = []
+	for i in range(len(names)):
+		if types[i] == 'reservoir':
+			names_r.append(names[i])
+		elif types[i] == 'pump':
+			names_p.append(names[i])
+		elif types[i] == 'turbine':
+			names_t.append(names[i])
+		else:
+			names_f.append(names[i])
+	#Reservoirs
+	if assets.get(pos).Topology.nRes == 1:
+		reservoirs = CSafeList([assets.get(pos).Reservoir])
+	else:
+		reservoirs = CSafeList(CSafeList(assets.get(pos).Reservoir).get(0))
+	for i in range(len(names_r)):
+		was = False
+		for j in range(reservoirs.len()):
+			if reservoirs.get(j).Shortname == names_r[i]:
+				was = True
+				break
+		if was == True:
+			continue
+		#Fix reading problems
+		if assets.get(pos).Topology.nRes > 1:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'ExpectedInflow')==0 Expected=[]; Expected.Val=[]; Expected.Start=0; Expected.End=0; [Data.Asset("+str(pos+1)+").Reservoir(:).ExpectedInflow]=deal(Expected); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'MaxLevel')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Reservoir(:).MaxLevel]=deal(Mx); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'MinLevel')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Reservoir(:).MinLevel]=deal(Mn); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'M3_to_MWh')==0 M3=[]; M3.X=[]; M3.Y=[]; [Data.Asset("+str(pos+1)+").Reservoir(:).M3_to_MWh]=deal(M3); end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Reservoir=orderfields(Data.Asset("+str(pos+1)+").Reservoir, {'ID', 'Name', 'Shortname', 'IsStochastic', 'MaxLevelFile', 'MinLevelFile', 'MWh2CubicMetresFile', 'InfiltrationLossesFile', 'Inflow', 'ExpectedInflow', 'Spill', 'Scheduler', 'StochasticWaterManager', 'ScenarioWaterManager', 'MaxLevel', 'MinLevel', 'M3_to_MWh'});")
+		else:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'ExpectedInflow')==0 Expected=[]; Expected.Val=[]; Expected.Start=0; Expected.End=0; [Data.Asset("+str(pos+1)+").Reservoir(1).ExpectedInflow]=deal(Expected); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'MaxLevel')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Reservoir(1).MaxLevel]=Mx; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'MinLevel')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos + 1)+").Reservoir(1).MinLevel]=Mn; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Reservoir(1), 'M3_to_MWh')==0 M3=[]; M3.X=[]; M3.Y=[]; [Data.Asset("+str(pos+1)+").Reservoir(1).M3_to_MWh]=M3; end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Reservoir=orderfields(Data.Asset("+str(pos+1)+").Reservoir, {'ID', 'Name', 'Shortname', 'IsStochastic', 'MaxLevelFile', 'MinLevelFile', 'MWh2CubicMetresFile', 'InfiltrationLossesFile', 'Inflow', 'ExpectedInflow', 'Spill', 'Scheduler', 'StochasticWaterManager', 'ScenarioWaterManager', 'MaxLevel', 'MinLevel', 'M3_to_MWh'});")
+		#adding
+		octave.eval('Top=Data.Asset('+str(pos+1)+').Topology; nRes=Top.nRes+1; Data.Asset('+str(pos+1)+').Topology.nRes=nRes; Data.Asset('+str(pos+1)+').Topology.Reservoir(nRes).Btn=[0.2+0.02*nRes 0.8+0.02*nRes];')
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Reservoir(nRes).SpillsToRes = 0; Res=[]; Res.ID=datenum(clock); Res.Name=''; Res.Shortname='"+names_r[i]+"'; Res.IsStochastic=1; Res.MaxLevelFile='';")
+		octave.eval("Res.MinLevelFile='0'; Res.MWh2CubicMetresFile='%AutoCalc'; Res.InfiltrationLossesFile=''; Res.Inflow.MinimumInflowFile='0'; Res.Inflow.MaximumInflowFile='0';")
+		octave.eval("Res.Inflow.ExpectedInflowFile='0'; Res.ExpectedInflow.Val=[]; Res.ExpectedInflow.Start=0; Res.ExpectedInflow.End=0; Res.Inflow.DayPatternFile = '';")
+		octave.eval("Res.Inflow.InflowScenarioFolder=''; Res.Inflow.TransitionProbabilityFile=''; Res.Spill.Capacity=1000; Res.Spill.Efficiency=100; Res.Scheduler.StartLevel=[]; Res.Scheduler.EndLevel=[];")
+		octave.eval("Res.Scheduler.LevelDiff=[]; Res.Scheduler.WaterValue=[]; Res.Scheduler.Deviation=[]; Res.Scheduler.HalfLife=[]; Res.Scheduler.Result=[]; Res.StochasticWaterManager.nStatesReservoir=101;")
+		octave.eval("Res.StochasticWaterManager.DMin=-10; Res.StochasticWaterManager.DMax=0; Res.StochasticWaterManager.StartLevel=[]; Res.StochasticWaterManager.Result=[];")
+		octave.eval("Res.ScenarioWaterManager.StartLevel=[]; Res.ScenarioWaterManager.EndLevel=[]; Res.ScenarioWaterManager.Deviation=[]; Res.ScenarioWaterManager.HalfLife=[];")
+		octave.eval("Res.ScenarioWaterManager.Result=[]; Res.MaxLevel.Val=[]; Res.MaxLevel.Start=0; Res.MaxLevel.End=0; Res.MinLevel.Val=[]; Res.MinLevel.Start=0; Res.MinLevel.End=0;")
+		octave.eval("Res.M3_to_MWh.X=[]; Res.M3_to_MWh.Y=[]; Data.Asset("+str(pos+1)+").Reservoir(nRes)=Res;")
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	#Flows
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	if assets.get(pos).Topology.nFlows == 0:
+		flows = CSafeList([])
+	elif assets.get(pos).Topology.nFlows == 1:
+		flows = CSafeList([assets.get(pos).Flow])
+	else:
+		flows = CSafeList(CSafeList(assets.get(pos).Flow).get(0))
+	for i in range(len(names_f)):
+		was = False
+		for j in range(flows.len()):
+			if flows.get(j).Shortname == names_f[i]:
+				was = True
+				break
+		if was == True:
+			continue
+		octave.eval("Top=Data.Asset("+str(pos+1)+").Topology; nFlows=Top.nFlows+1; Data.Asset("+str(pos+1)+").Topology.nFlows=nFlows; Data.Asset("+str(pos+1)+").Topology.Flow(nFlows).Btn=[0.2+0.02*nFlows 0.2+0.02*nFlows];")
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Flow(nFlows).OperatesFrom=0; Data.Asset("+str(pos+1)+").Topology.Flow(nFlows).OperatesTo=0; ")
+		octave.eval("for idxFlow=1:(nFlows-1) if ~isfield(Data.Asset("+str(pos+1)+").Flow(idxFlow), 'MaxFlow') Data.Asset("+str(pos+1)+").Flow(idxFlow).MaxFlow.Val=[]; Data.Asset("+str(pos+1)+").Flow(idxFlow).MaxFlow.Start=0; Data.Asset("+str(pos+1)+").Flow(idxFlow).MaxFlow.End=0; Data.Asset("+str(pos+1)+").Flow(idxFlow).MinFlow.Val=[]; Data.Asset("+str(pos+1)+").Flow(idxFlow).MinFlow.Start=0; Data.Asset("+str(pos+1)+").Flow(idxFlow).MinFlow.End=0; end; end;")
+		octave.eval("Flow=[]; Flow.ID=datenum(clock); Flow.Name=''; Flow.Shortname='"+names_f[i]+"'; Flow.MaxFlowFile=''; Flow.MinFlowFile='0'; Flow.Scheduler.Result=[]; Flow.ScenarioWaterManager.Result=[];")
+		octave.eval("Flow.MaxFlow.Val=[]; Flow.MaxFlow.Start=0; Flow.MaxFlow.End=0; Flow.MinFlow.Val=[]; Flow.MinFlow.Start=0; Flow.MinFlow.End=0;")
+		octave.eval("if nFlows==1 Data.Asset("+str(pos+1)+").Flow=Flow; else Data.Asset("+str(pos+1)+").Flow(nFlows)=Flow; end;")
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	#Turbines
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps == 1:
+		engines = CSafeList([assets.get(pos).Engine])
+	else:
+		engines = CSafeList(CSafeList(assets.get(pos).Engine).get(0))
+	for i in range(len(names_t)):
+		was = False
+		for j in range(int(assets.get(pos).Topology.nTurbines)):
+			if engines.get(j).Shortname == names_t[i]:
+				was = True
+				break
+		if was == True:
+			continue
+		#fix reading problems
+		if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps > 1:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MaxFlow')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MaxFlow]=deal(Mx); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinRunFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MinRunFlow]=deal(Mn); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MinFlow]=deal(Mn); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Characteristic')==0 Ch=[]; Ch.X=[]; Ch.Y=0; [Data.Asset("+str(pos+1)+").Engine(:).Characteristic]=deal(Ch); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristic')==0 PCh=[]; PCh.X=[]; PCh.Y=0; [Data.Asset("+str(pos+1)+").Engine(:).PowerCharacteristic]=deal(PCh); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristicIsAbsolute')==0 [Data.Asset("+str(pos+1)+").Engine(:).PowerCharacteristicIsAbsolute]=deal(0); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'bUseReservoirAbove')==0 [Data.Asset("+str(pos+1)+").Engine(:).bUseReservoirAbove]=deal(true); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PriceFile')==0 [Data.Asset("+str(pos+1)+").Engine(:).PriceFile]=deal([]); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Price')==0 Pr=[]; Pr.Val=[]; Pr.Start=0; Pr.End=0; [Data.Asset("+str(pos+1)+").Engine(:).Price]=deal(Pr); end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Engine=orderfields(Data.Asset("+str(pos+1)+").Engine, {'ID', 'Name', 'Shortname', 'Type', 'MaxFlowFile', 'MaxFlow', 'MinRunningFlowFile', 'MinRunFlow', 'MinFlowFile', 'MinFlow', 'StartupFile', 'ShutdownFile', 'EngineCharacteristicFile', 'Characteristic', 'EnginePowerCharacteristicFile', 'PowerCharacteristic', 'PowerCharacteristicIsAbsolute', 'bUseReservoirAbove', 'OperatingCosts', 'StartupCosts', 'ShutdownCosts', 'MaxNofOperatingHours', 'MinNofOperatingHours', 'MinNofIdleHours', 'MinProductionHoursValue', 'MaxProductionHoursValue', 'MaxProductionHoursPeriod', 'MinStartsValue', 'MaxStartsValue', 'MaxStartsPeriod', 'PriceFile', 'Price', 'MaxNofProductionHours', 'MaxNofStarts', 'ProductionReserve', 'ConsumptionReserve', 'IncludeInReserve', 'Scheduler', 'ScenarioWaterManager'});")
+		else:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MaxFlow')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MaxFlow]=Mx; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinRunFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MinRunFlow]=Mn; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MinFlow]=Mn; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Characteristic')==0 Ch=[]; Ch.X=[]; Ch.Y=0; [Data.Asset("+str(pos+1)+").Engine(1).Characteristic]=Ch; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristic')==0 PCh=[]; PCh.X=[]; PCh.Y=0; [Data.Asset("+str(pos+1)+").Engine(1).PowerCharacteristic]=PCh; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristicIsAbsolute')==0 [Data.Asset("+str(pos+1)+").Engine(1).PowerCharacteristicIsAbsolute]=0; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'bUseReservoirAbove')==0 [Data.Asset("+str(pos+1)+").Engine(1).bUseReservoirAbove]=true; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PriceFile')==0 [Data.Asset("+str(pos+1)+").Engine(1).PriceFile]=[]; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Price')==0 Pr=[]; Pr.Val=[]; Pr.Start=0; Pr.End=0; [Data.Asset("+str(pos+1)+").Engine(1).Price]=Pr; end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Engine=orderfields(Data.Asset("+str(pos+1)+").Engine, {'ID', 'Name', 'Shortname', 'Type', 'MaxFlowFile', 'MaxFlow', 'MinRunningFlowFile', 'MinRunFlow', 'MinFlowFile', 'MinFlow', 'StartupFile', 'ShutdownFile', 'EngineCharacteristicFile', 'Characteristic', 'EnginePowerCharacteristicFile', 'PowerCharacteristic', 'PowerCharacteristicIsAbsolute', 'bUseReservoirAbove', 'OperatingCosts', 'StartupCosts', 'ShutdownCosts', 'MaxNofOperatingHours', 'MinNofOperatingHours', 'MinNofIdleHours', 'MinProductionHoursValue', 'MaxProductionHoursValue', 'MaxProductionHoursPeriod', 'MinStartsValue', 'MaxStartsValue', 'MaxStartsPeriod', 'PriceFile', 'Price', 'MaxNofProductionHours', 'MaxNofStarts', 'ProductionReserve', 'ConsumptionReserve', 'IncludeInReserve', 'Scheduler', 'ScenarioWaterManager'});")
+		#adding
+		octave.eval("Top=Data.Asset("+str(pos+1)+").Topology; nTurbines=Top.nTurbines+1; Data.Asset("+str(pos+1)+").Topology.nTurbines=nTurbines;")
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine(nTurbines+1 : nTurbines+Top.nPumps)=Data.Asset("+str(pos+1)+").Topology.Engine(Top.nTurbines+1 : Top.nTurbines+Top.nPumps);")
+		octave.eval("Data.Asset("+str(pos+1)+").Engine(nTurbines+1 : nTurbines+Top.nPumps)=Data.Asset("+str(pos+1)+").Engine(Top.nTurbines+1 : Top.nTurbines+Top.nPumps);")
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine(nTurbines).Btn=[0.2+0.02*nTurbines 0.6+0.02*nTurbines]; Data.Asset("+str(pos+1)+").Topology.Engine(nTurbines).OperatesFrom = 0;")
+		octave.eval("Engine=[]; Engine.ID=datenum(clock); Engine.Name=''; Engine.Shortname='"+names_t[i]+"'; Engine.Type = 1; Engine.MaxFlowFile=''; Engine.MaxFlow.Val=[]; Engine.MaxFlow.Start=0;")
+		octave.eval("Engine.MaxFlow.End=0; Engine.MinRunningFlowFile='0'; Engine.MinRunFlow.Val=[]; Engine.MinRunFlow.Start=0; Engine.MinRunFlow.End=0; Engine.MinFlowFile='0';")
+		octave.eval("Engine.MinFlow.Val=[]; Engine.MinFlow.Start=0; Engine.MinFlow.End=0; Engine.StartupFile='1'; Engine.ShutdownFile='1'; Engine.EngineCharacteristicFile='';")
+		octave.eval("Engine.Characteristic.X=[]; Engine.Characteristic.Y=[]; Engine.EnginePowerCharacteristicFile='%Constant'; Engine.PowerCharacteristic.X=[]; Engine.PowerCharacteristic.Y = [];")
+		octave.eval("Engine.PowerCharacteristicIsAbsolute=false; Engine.bUseReservoirAbove=true; Engine.OperatingCosts=0; Engine.StartupCosts=0; Engine.ShutdownCosts=0; Engine.MaxNofOperatingHours = Inf;")
+		octave.eval("Engine.MinNofOperatingHours=1; Engine.MinNofIdleHours=1; Engine.MinProductionHoursValue=[]; Engine.MaxProductionHoursValue=[]; Engine.MaxProductionHoursPeriod='Day';")
+		octave.eval("Engine.MinStartsValue=[]; Engine.MaxStartsValue=[]; Engine.MaxStartsPeriod='Day'; Eng.AlphaPower=[]; Eng.AlphaPrime=[]; Eng.LastFlow=[]; Eng.MaxPower=[]; Eng.MinPower = [];")
+		octave.eval("Eng.MinRunningPower=[]; Eng.MaxPowerPrime=[]; Eng.MaxFlow=[]; Eng.MinRunningFlow=[]; Eng.MinFlow=[]; Eng.MaxPossibleFlow=[]; Eng.MinPossibleRunningFlow=[]; Eng.MinPossibleFlow=[];")
+		octave.eval("Eng.MaxFlowPrime=[]; Eng.RM3Lin=[]; Engine.PriceFile=''; Engine.Price.Val=[]; Engine.Price.Start=0; Engine.Price.End=0; Engine.MaxNofProductionHours=[]; Engine.MaxNofStarts=[];")
+		octave.eval("Engine.ProductionReserve=0; Engine.ConsumptionReserve=0; Engine.IncludeInReserve=0; Engine.Scheduler.Result=[]; Engine.ScenarioWaterManager.Result=[];")
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine(nTurbines).OperatesTo=0; Data.Asset("+str(pos+1)+").Engine(nTurbines)=Engine;")
+		octave.eval("if ~isempty(Data.Asset("+str(pos+1)+").EngineAlternatives) Old=Data.Asset("+str(pos+1)+").EngineAlternatives; New=zeros(nTurbines+Top.nPumps); New(1:Top.nTurbines,1:Top.nTurbines)=Old(1:Top.nTurbines,1:Top.nTurbines); New(1:Top.nTurbines,nTurbines+1:end)=Old(1:Top.nTurbines,Top.nTurbines+1:end); New(nTurbines+1:end,1:Top.nTurbines)=Old(Top.nTurbines+1:end,1:Top.nTurbines); New(nTurbines+1:end,nTurbines+1:end)=Old(Top.nTurbines+1:end,Top.nTurbines+1:end); Data.Asset("+str(pos+1)+").EngineAlternatives = New; end;")
+		octave.eval("Data.Asset("+str(pos+1)+").Engine(nTurbines).IncludeInReserve=zeros(1,length(Data.Asset("+str(pos+1)+").Reserve));")
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	#Pumps
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps == 1:
+		engines = CSafeList([assets.get(pos).Engine])
+	else:
+		engines = CSafeList(CSafeList(assets.get(pos).Engine).get(0))
+	for i in range(len(names_p)):
+		was = False
+		for j in range(int(assets.get(pos).Topology.nTurbines), engines.len()):
+			if engines.get(j).Shortname == names_p[i]:
+				was = True
+				break
+		if was == True:
+			continue
+		#fix reading problems
+		if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps > 1:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MaxFlow')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MaxFlow]=deal(Mx); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinRunFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MinRunFlow]=deal(Mn); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(:).MinFlow]=deal(Mn); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Characteristic')==0 Ch=[]; Ch.X=[]; Ch.Y=0; [Data.Asset("+str(pos+1)+").Engine(:).Characteristic]=deal(Ch); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristic')==0 PCh=[]; PCh.X=[]; PCh.Y=0; [Data.Asset("+str(pos+1)+").Engine(:).PowerCharacteristic]=deal(PCh); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristicIsAbsolute')==0 [Data.Asset("+str(pos+1)+").Engine(:).PowerCharacteristicIsAbsolute]=deal(0); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'bUseReservoirAbove')==0 [Data.Asset("+str(pos+1)+").Engine(:).bUseReservoirAbove]=deal(true); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PriceFile')==0 [Data.Asset("+str(pos+1)+").Engine(:).PriceFile]=deal([]); end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Price')==0 Pr=[]; Pr.Val=[]; Pr.Start=0; Pr.End=0; [Data.Asset("+str(pos+1)+").Engine(:).Price]=deal(Pr); end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Engine=orderfields(Data.Asset("+str(pos+1)+").Engine, {'ID', 'Name', 'Shortname', 'Type', 'MaxFlowFile', 'MaxFlow', 'MinRunningFlowFile', 'MinRunFlow', 'MinFlowFile', 'MinFlow', 'StartupFile', 'ShutdownFile', 'EngineCharacteristicFile', 'Characteristic', 'EnginePowerCharacteristicFile', 'PowerCharacteristic', 'PowerCharacteristicIsAbsolute', 'bUseReservoirAbove', 'OperatingCosts', 'StartupCosts', 'ShutdownCosts', 'MaxNofOperatingHours', 'MinNofOperatingHours', 'MinNofIdleHours', 'MinProductionHoursValue', 'MaxProductionHoursValue', 'MaxProductionHoursPeriod', 'MinStartsValue', 'MaxStartsValue', 'MaxStartsPeriod', 'PriceFile', 'Price', 'MaxNofProductionHours', 'MaxNofStarts', 'ProductionReserve', 'ConsumptionReserve', 'IncludeInReserve', 'Scheduler', 'ScenarioWaterManager'});")
+		else:
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MaxFlow')==0 Mx=[]; Mx.Val=[]; Mx.Start=0; Mx.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MaxFlow]=Mx; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinRunFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MinRunFlow]=Mn; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'MinFlow')==0 Mn=[]; Mn.Val=[]; Mn.Start=0; Mn.End=0; [Data.Asset("+str(pos+1)+").Engine(1).MinFlow]=Mn; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Characteristic')==0 Ch=[]; Ch.X=[]; Ch.Y=0; [Data.Asset("+str(pos+1)+").Engine(1).Characteristic]=Ch; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristic')==0 PCh=[]; PCh.X=[]; PCh.Y=0; [Data.Asset("+str(pos+1)+").Engine(1).PowerCharacteristic]=PCh; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PowerCharacteristicIsAbsolute')==0 [Data.Asset("+str(pos+1)+").Engine(1).PowerCharacteristicIsAbsolute]=0; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'bUseReservoirAbove')==0 [Data.Asset("+str(pos+1)+").Engine(1).bUseReservoirAbove]=true; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'PriceFile')==0 [Data.Asset("+str(pos+1)+").Engine(1).PriceFile]=[]; end;")
+			octave.eval("if isfield(Data.Asset("+str(pos+1)+").Engine(1), 'Price')==0 Pr=[]; Pr.Val=[]; Pr.Start=0; Pr.End=0; [Data.Asset("+str(pos+1)+").Engine(1).Price]=Pr; end;")
+			octave.eval("Data.Asset("+str(pos+1)+").Engine=orderfields(Data.Asset("+str(pos+1)+").Engine, {'ID', 'Name', 'Shortname', 'Type', 'MaxFlowFile', 'MaxFlow', 'MinRunningFlowFile', 'MinRunFlow', 'MinFlowFile', 'MinFlow', 'StartupFile', 'ShutdownFile', 'EngineCharacteristicFile', 'Characteristic', 'EnginePowerCharacteristicFile', 'PowerCharacteristic', 'PowerCharacteristicIsAbsolute', 'bUseReservoirAbove', 'OperatingCosts', 'StartupCosts', 'ShutdownCosts', 'MaxNofOperatingHours', 'MinNofOperatingHours', 'MinNofIdleHours', 'MinProductionHoursValue', 'MaxProductionHoursValue', 'MaxProductionHoursPeriod', 'MinStartsValue', 'MaxStartsValue', 'MaxStartsPeriod', 'PriceFile', 'Price', 'MaxNofProductionHours', 'MaxNofStarts', 'ProductionReserve', 'ConsumptionReserve', 'IncludeInReserve', 'Scheduler', 'ScenarioWaterManager'});")
+		#adding
+		octave.eval("Top=Data.Asset("+str(pos+1)+").Topology; nPumps=Top.nPumps+1; Data.Asset("+str(pos+1)+").Topology.nPumps=nPumps; Data.Asset("+str(pos+1)+").Topology.Engine(Top.nTurbines+nPumps).Btn=[0.2+0.02*nPumps 0.4+0.02*nPumps];")
+		octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine(Top.nTurbines+nPumps).OperatesFrom=0; Data.Asset("+str(pos+1)+").Topology.Engine(Top.nTurbines+nPumps).OperatesTo=0;")
+		octave.eval("Engine=[]; Engine.ID=datenum(clock); Engine.Name=''; Engine.Shortname='"+names_p[i]+"'; Engine.Type = 1; Engine.MaxFlowFile=''; Engine.MaxFlow.Val=[]; Engine.MaxFlow.Start=0;")
+		octave.eval("Engine.MaxFlow.End=0; Engine.MinRunningFlowFile='0'; Engine.MinRunFlow.Val=[]; Engine.MinRunFlow.Start=0; Engine.MinRunFlow.End=0; Engine.MinFlowFile='0';")
+		octave.eval("Engine.MinFlow.Val=[]; Engine.MinFlow.Start=0; Engine.MinFlow.End=0; Engine.StartupFile='1'; Engine.ShutdownFile='1'; Engine.EngineCharacteristicFile='';")
+		octave.eval("Engine.Characteristic.X=[]; Engine.Characteristic.Y=[]; Engine.EnginePowerCharacteristicFile='%Constant'; Engine.PowerCharacteristic.X=[]; Engine.PowerCharacteristic.Y = [];")
+		octave.eval("Engine.PowerCharacteristicIsAbsolute=false; Engine.bUseReservoirAbove=true; Engine.OperatingCosts=0; Engine.StartupCosts=0; Engine.ShutdownCosts=0; Engine.MaxNofOperatingHours = Inf;")
+		octave.eval("Engine.MinNofOperatingHours=1; Engine.MinNofIdleHours=1; Engine.MinProductionHoursValue=[]; Engine.MaxProductionHoursValue=[]; Engine.MaxProductionHoursPeriod='Day';")
+		octave.eval("Engine.MinStartsValue=[]; Engine.MaxStartsValue=[]; Engine.MaxStartsPeriod='Day'; Eng.AlphaPower=[]; Eng.AlphaPrime=[]; Eng.LastFlow=[]; Eng.MaxPower=[]; Eng.MinPower = [];")
+		octave.eval("Eng.MinRunningPower=[]; Eng.MaxPowerPrime=[]; Eng.MaxFlow=[]; Eng.MinRunningFlow=[]; Eng.MinFlow=[]; Eng.MaxPossibleFlow=[]; Eng.MinPossibleRunningFlow=[]; Eng.MinPossibleFlow=[];")
+		octave.eval("Eng.MaxFlowPrime=[]; Eng.RM3Lin=[]; Engine.PriceFile=''; Engine.Price.Val=[]; Engine.Price.Start=0; Engine.Price.End=0; Engine.MaxNofProductionHours=[]; Engine.MaxNofStarts=[];")
+		octave.eval("Engine.ProductionReserve=0; Engine.ConsumptionReserve=0; Engine.IncludeInReserve=0; Engine.Scheduler.Result=[]; Engine.ScenarioWaterManager.Result=[];")
+		octave.eval("Data.Asset("+str(pos+1)+").Engine(Top.nTurbines+nPumps)=Engine; ")
+		octave.eval("if ~isempty(Data.Asset("+str(pos+1)+").EngineAlternatives) Old=Data.Asset("+str(pos+1)+").EngineAlternatives; New=zeros(Top.nTurbines+nPumps); New(1:Top.nTurbines+Top.nPumps,1:Top.nTurbines+Top.nPumps)=Old; Data.Asset("+str(pos+1)+").EngineAlternatives=New; end;")
+		octave.eval("Data.Asset("+str(pos+1)+").Engine(Top.nTurbines+nPumps).IncludeInReserve=zeros(1,length(Data.Asset("+str(pos+1)+").Reserve));")
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	#Connections and Coordinates
+	resPos = {}
+	data = CSafeList(globalDict.get('hydroptModel').Asset)
+	if globalDict.get('hydroptModel').nAssets == 1:
+		assets = CSafeList([globalDict.get('hydroptModel').Asset])
+	else:
+		assets = CSafeList(lst=data.get(0))
+	if assets.get(pos).Topology.nRes == 1:
+		reservoirs = CSafeList([assets.get(pos).Reservoir])
+	else:
+		reservoirs = CSafeList(CSafeList(assets.get(pos).Reservoir).get(0))
+	if assets.get(pos).Topology.nTurbines + assets.get(pos).Topology.nPumps == 1:
+		engines = CSafeList([assets.get(pos).Engine])
+	else:
+		engines = CSafeList(CSafeList(assets.get(pos).Engine).get(0))
+	for i in range(reservoirs.len()):
+		resPos[reservoirs.get(i).Shortname] = i + 1
+	if assets.get(pos).Topology.nFlows == 0:
+		flows = CSafeList([])
+	elif assets.get(pos).Topology.nFlows == 1:
+		flows = CSafeList([assets.get(pos).Flow])
+	else:
+		flows = CSafeList(CSafeList(assets.get(pos).Flow).get(0))
+	for i in range(len(names)):
+		#Reservoirs
+		if types[i] == 'reservoir':
+			if operatesTo[i] != 'null':
+				octave.eval("Data.Asset("+str(pos+1)+").Topology.Reservoir("+str(resPos[names[i]])+").SpillsToRes="+str(resPos[operatesTo[i]])+";")
+			octave.eval("Data.Asset("+str(pos+1)+").Topology.Reservoir("+str(resPos[names[i]])+").Btn=["+str(x[i])+" "+str(y[i])+"];")
+		#Turbines and Pumps
+		for j in range(engines.len()):
+			if engines.get(j).Shortname == names[i]:
+				if operatesFrom[i] != 'null':
+					octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine("+str(j+1)+").OperatesFrom="+str(resPos[operatesFrom[i]])+";")
+				if operatesTo[i] != 'null':
+					octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine("+str(j+1)+").OperatesTo="+str(resPos[operatesTo[i]])+";")
+				octave.eval("Data.Asset("+str(pos+1)+").Topology.Engine("+str(j+1)+").Btn=["+str(x[i])+" "+str(y[i])+"];")
+		#Flows
+		for j in range(flows.len()):
+			if flows.get(j).Shortname == names[i]:
+				if operatesFrom[i] != 'null':
+					octave.eval("Data.Asset("+str(pos+1)+").Topology.Flow("+str(j+1)+").OperatesFrom="+str(resPos[operatesFrom[i]])+";")
+				if operatesTo[i] != 'null':
+					octave.eval("Data.Asset("+str(pos+1)+").Topology.Flow("+str(j+1)+").OperatesTo="+str(resPos[operatesTo[i]])+";")
+				octave.eval("Data.Asset("+str(pos+1)+").Topology.Flow("+str(j+1)+").Btn=["+str(x[i])+" "+str(y[i])+"];")
+	globalDict.set('hydroptModel', octave.pull('Data'))
+	return names[0]
 
 class CUrlProcessor(CRestricted):
 #bsp. path: http://localhost:5000/d/DisplayScreen@screen=ResultOverview&theme=grey/CalcFourier@data=data
@@ -528,8 +931,9 @@ byte_code = compile_restricted(
 	mode = 'exec'
 )
 additional_globals = {
-	'date': date, 'timedelta': timedelta, 'datetime': datetime, 'log': CSafeLog(None), 'globalDict': globalDict, 'CSafeNP': CSafeNP(),
-	'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io, 'CSafeFigure': CSafeFigure, 'CSafeDict': CSafeDict, 'CSafePoint': CSafePoint
+	'date': date, 'timedelta': timedelta, 'datetime': datetime, 'log': CSafeLog(None), 'globalDict': globalDict, 'CSafeNP': CSafeNP(), 'dateUtils': CSafeDateUtils(), 'math': math,
+	'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io, 'CSafeFigure': CSafeFigure, 'CSafeDict': CSafeDict, 'CSafePoint': CSafePoint, 'CSafeMatlab': CSafeMatlab(),
+	'CSafeStr': CSafeStr, 'scipy': scipy, 'CSafeDF': CSafeDF, 'urllib': urllib, 'octave': octave,
 }
 safe_globals = safe_builtins
 safe_globals.update(additional_globals)
@@ -556,7 +960,8 @@ for screen in screenNames:
 	additional_globals = {
 		'date': date, 'timedelta': timedelta, 'datetime': datetime, 'screenVariables': dictionaryOfAllScreenVariables["0"][screen], 'log': CSafeLog(None), 'screen': screen,
 		'decodeFile': base64.b64decode, 'split': safeSplit, 'pd': pd, 'io': io, 'CSafeFigure': CSafeFigure, 'CSafeDict': CSafeDict, 'CSafePoint': CSafePoint, 'time': time,
-		'getNameFromId' : getNameFromId, 'CSafeList': CSafeList, 'globalDict': globalDict, 'CSafeNP': CSafeNP(),
+		'getNameFromId' : getNameFromId, 'CSafeList': CSafeList, 'globalDict': globalDict, 'CSafeNP': CSafeNP(), 'dateUtils': CSafeDateUtils(), 'CSafeMatlab': CSafeMatlab(),
+		'math': math, 'CSafeStr': CSafeStr, 'scipy': scipy, 'CSafeDF': CSafeDF, 'urllib': urllib, 'octave': octave,
 	}
 	safe_globals = safe_builtins
 	safe_globals.update(additional_globals)
@@ -577,13 +982,13 @@ for interaction in interactionsDict:
 			for i in range(int(cnt)):
 				inputId = generateId(input['object'], tType, interaction['screen']) + '-label-' + str(i)
 				inputLst.append(Input(inputId, input['param']))
-				print(inputId)
 	stateLst = []
 	if 'state' in interaction:
 		for state in interaction['state']:
 			stateId = generateId(state['object'], state['type'], interaction['screen'])
 			stateLst.append(State(stateId, state['param']))
 	outputId = generateId(interaction['output']['object'], interaction['output']['type'], interaction['screen'])
+	print(interaction['screen'], interaction['callback'])
 	dash_app.callback(
 		Output(outputId, interaction['output']['param']),
 		inputLst,

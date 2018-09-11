@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import date, timedelta, datetime
 import copy
+import oct2py
 
 import plotly.graph_objs as go
 
@@ -12,7 +13,7 @@ CUser = User.CUser
 dictionaryOfAllScreenVariables = {}
 
 def generateId(name, type, screen):
-	print(name, type, screen)
+	#print(name, type, screen)
 	return name + '-' + type + '-' + screen
 
 class CRestricted(object):
@@ -34,10 +35,10 @@ class CRestricted(object):
 				dictionaryOfAllScreenVariables[cur_uid][screenName] = CSafeDict({})
 			dictionaryOfAllScreenVariables[cur_uid][screenName].set(name, self)
 			print('Added ', name, ' to dict with uid = ', cur_uid, ' screen = ', screenName)
-		print('name: ', name)
-		print('screenName: ', screenName)
-		print('classname: ', self.__class__.__name__)
-		print('id: ', self.__localID)
+		#print('name: ', name)
+		#print('screenName: ', screenName)
+		#print('classname: ', self.__class__.__name__)
+		#print('id: ', self.__localID)
 	def getUser(self): return self.__user
 
 class CSafeDict(CRestricted):
@@ -53,15 +54,18 @@ class CSafeDict(CRestricted):
 			return True
 		else:
 			return False
+	def getKeys(self): return self.__d.keys()
+	def getValues(self): return self.__d.values()
+	def erase(self, key): self.__d.pop(key)
 
 class CSafeNP(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
-	def min(self, v): return np.min(v)
-	def max(self, v): return np.max(v)
+	def min(self, v): return np.min(np.array(v))
+	def max(self, v): return np.max(np.array(v))
 	def hstack(self, v): return np.hstack(v)
 	def vstack(self, v): return np.vstack(v)
 	def arange(self, stop, start=0, step=1, dtype=None): return np.arange(start=start, stop=stop, step=step, dtype=dtype)
-	def size(self, v): return v.size
+	def size(self, v): return np.array(v).size
 	def array(self, v):
 		if isinstance(v, int) or isinstance(v, float):
 			return np.array([v])
@@ -69,6 +73,44 @@ class CSafeNP(CRestricted):
 			return np.array(v)
 	def reshape(self, v, x, y): return v.reshape(x, y)
 	def transpose(self, v): return np.transpose(v)
+	def mean(self, v): return np.mean(np.array(v))
+	def std(self, v): return np.std(np.array(v))
+	def min(self, v): return np.min(np.array(v))
+	def max(self, v): return np.max(np.array(v))
+	def format(self, v, form): return form.format(v)
+	def unique(self, v): return np.unique(np.array(v))
+	def where(self, v, value):
+		idx = np.where(np.array(v) == value)[0]
+		if len(idx) == 0:
+			return -1
+		else:
+			return idx[0]
+	def sum(self, v, axis=None):
+		if axis is None:
+			return np.sum(np.array(v))
+		else:
+			return np.sum(np.array(v), axis=axis)
+	def shape(self, v): return np.array(v).shape
+	def sort(self, v, axis=None):
+		return np.sort(np.array(v), axis=axis)
+	def getColumn(self, v, num): return np.array(v)[:,num]
+	def getColumns(self, v, x1, x2): return np.array(v)[:,x1:x2]
+	def flatten(self, v): return np.array(v).flatten()
+	def concatenate(self, v1, v2): return np.concatenate((np.array(v1), np.array(v2)), axis=None)
+	def whereTime(self, v, ordinal):
+		i = 0
+		v = np.array(v)
+		tm = datetime.fromordinal(int(round(ordinal)) - 366)
+		delta = 1000
+		pos = -1
+		while (i < len(v)):
+			if abs(v[i] - ordinal) < delta:
+				delta = abs(v[i] - ordinal)
+				pos = i
+			i = i + 1
+		if pos != -1 and datetime.fromordinal(int(round(v[pos])) - 366) == tm:
+			return pos
+		return -1
 
 
 class CSafeFigure(CRestricted):
@@ -116,6 +158,9 @@ class CSafeFigure(CRestricted):
 				shape=type,
 				smoothing=smoothing,
 			)
+	def scale(self, ratio):
+		self.__figure['layout']['width'] = float(self.__figure['layout']['width']) * ratio
+		self.__figure['layout']['height'] = float(self.__figure['layout']['height']) * ratio
 
 class CSafePoint(CRestricted):
 	def __init__(self, clickData, user=CUser()):
@@ -124,12 +169,11 @@ class CSafePoint(CRestricted):
 	def getDict(self): return self.__point.getDict()
 	def getPoint(self): return self.__point
 
-
 class CSafeDateUtils(CRestricted):
 	def __init__(self, user=CUser()): super().__init__(user)
 	def to_datetime(self, v): return pd.to_datetime(v)
 	def to_str(self, d): return d.strftime("%Y-%m-%d %H:%M")
-	def from_matlab(self, v): return date.fromordinal(int(v)) + timedelta(days=v % 1) - timedelta(days=366)  # date.fromordinal(int(v-366))
+	def from_matlab(self, v): return date.fromordinal(int(round(v))) + timedelta(days=v % 1) - timedelta(days=366)  # date.fromordinal(int(v-366))
 	def date_range(self, start, end, freq='D', tz=None): return pd.date_range(start=start, end=end, freq=freq, tz=tz)
 	def date_range_from_matlab(self, start, end, freq='H', tz=None): return self.date_range(start=self.from_matlab(start), end=self.from_matlab(end), freq=freq, tz=tz)
 	def months_from_matlab(self, start, end): return self.date_range_from_matlab(start=start, end=end, freq='MS')
@@ -185,3 +229,48 @@ class CSafeList(CRestricted):
 		return self.__lst
 	def len(self):
 		return len(self.__lst)
+	def sort(self, desc=False):
+		if desc:
+			self.__lst.sort(key=lambda x: -x)
+		else:
+			self.__lst.sort()
+	def sortKey(self, key, desc=False):
+		if desc:
+			self.__lst.sort(key=lambda x: -x[key])
+		else:
+			self.__lst.sort(key=lambda x: x[key])
+	def slice(self, x1, x2): return self.__lst[x1:x2]
+
+class CSafeMatlab(CRestricted):
+	def __init__(self, user = CUser()): super().__init__(user)
+	def set(self, key, value): key = value
+	def setField(self, key, field, value):
+		key[field] = value
+		return
+	def setFieldNum(self, key, pos, field, value):
+		key[pos][field] = value
+		return
+	def struct(self, dict): return oct2py.Struct(dict)
+	def Struct(self): return oct2py.Struct()
+	def structArray(self, arr):
+		return oct2py.io.StructArray(pd.DataFrame(arr).to_records())
+
+class CSafeStr(CRestricted):
+	def __init__(self, string = '', user = CUser()):
+		self.__str = str(string)
+		user = CUser()
+	def append(self, c):
+		self.__str = self.__str + c
+	def get(self, pos):
+		return self.__str[pos]
+	def getStr(self): return self.__str
+	def set(self, pos, value):
+		self.__str[pos] = value
+	def slice(self, x1, x2): return self.__str[x1:x2]
+	def len(self): return len(self.__str)
+	def split(self, sep): return self.__str.split(sep)
+	def rsplit(self, sep, cnt=1): return self.__str.rsplit(sep, cnt)
+	def find(self, str): return self.__str.find(str)
+	def replace(self, s1, s2):
+		self.__str = self.__str.replace(s1, s2)
+		return self.__str

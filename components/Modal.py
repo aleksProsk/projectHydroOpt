@@ -10,7 +10,7 @@ class CModal(CDashComponent):
 	def setModal(self, style):
 		style['display'] = 'none'
 		style['position'] = 'fixed'
-		style['z-index'] = -1
+		style['zIndex'] = 10001
 		style['padding-top'] = '10%'
 		style['left'] = 0
 		style['top'] = 0

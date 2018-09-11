@@ -29,9 +29,9 @@ BASIC_GRAPH_LAYOUT = dict(
 
 class CChart(CDashComponent):
 	def __init__(self, rows=[], headers=[], rowCaptions=[], title='', type='bar', barmode='group', style={}, xAxis='', yAxis='', showLegend=True, hoverinfo='x+y',
-                 name = None, screenName = None):
+				 error={}, name=None, screenName=None):
 		super().__init__(name, screenName)
-		self.setChart(rows, headers, rowCaptions, title, type, barmode, style, xAxis, yAxis, showLegend, hoverinfo)
+		self.setChart(rows, headers, rowCaptions, title, type, barmode, style, xAxis, yAxis, showLegend, hoverinfo, error)
 	def getRows(self): return self.__rows
 	def getHeaders(self): return self.__headers
 	def getRowCaptions(self): return self.__rowCaptions
@@ -45,13 +45,16 @@ class CChart(CDashComponent):
 		self.__barmode = barmode
 	def __setDataMap(self): self.__dataMap = lambda x: {'x': self.__rowCaptions, 'y': x[0], 'name': x[1], 'type': self.__type}
 	def __setDataVec(self): self.__dataVec = (lambda x: [np.array(x[0]).flatten(), x[1]]) /m/ transpose([self.__rows, self.__headers])  #list(map(lambda x: [x[0].flatten(), x[1]], transpose([self.__rows, self.__headers])))
-	def __setData(self, hoverinfo):
+	def __setData(self, hoverinfo, error):
 		self.__data = self.__dataMap /m/ self.__dataVec #list(map(self._dataMap, self._dataVec))
 		for i in range(len(self.__data)):
 			self.__data[i]['hoverinfo'] = hoverinfo
 			self.__data[i]['hoverlabel'] = dict()
 			self.__data[i]['hoverlabel']['namelength'] = -1
+			self.__data[i]['error_y'] = error
+			self.__data[i]['yaxis'] = 'y1'
 	def __setLayout(self, style, xAxis, yAxis, showLegend):
+		self.__style = style
 		height = 'auto'
 		if 'height' in style:
 			height = style['height']
@@ -87,12 +90,32 @@ class CChart(CDashComponent):
 		return
 		#self.__figure = value
 	def getValue(self): return self.__figure
-	def setChart(self, rows, headers, rowCaptions, title, type, barmode, style, xAxis, yAxis, showLegend, hoverinfo):
+	def setChart(self, rows, headers, rowCaptions, title, type, barmode, style, xAxis, yAxis, showLegend, hoverinfo, error):
 		self.__setParams(rows, headers, rowCaptions, title, type, barmode)
 		self.__setDataMap()
 		self.__setDataVec()
-		self.__setData(hoverinfo)
+		self.__setData(hoverinfo, error)
 		self.__setLayout(style, xAxis, yAxis, showLegend)
 		self.__setFigure()
 		chart = dcc.Graph(id=super().getID(), figure=self.__figure)
 		super().setDashRendering(html.Div(chart, style=style))
+	def addTrace(self, x, y, type, hoverinfo, yaxis):
+		if yaxis != None:
+			self.__layout['yaxis2'] = yaxis
+			self.__data.append({
+				'x': x,
+				'y': y,
+				'type': type,
+				'hoverinfo': hoverinfo,
+				'yaxis': 'y2',
+			})
+		else:
+			self.__data.append({
+				'x': x,
+				'y': y,
+				'type': type,
+				'hoverinfo': hoverinfo,
+			})
+		self.__setFigure()
+		chart = dcc.Graph(id=super().getID(), figure=self.__figure)
+		super().setDashRendering(html.Div(chart, style=self.__style))

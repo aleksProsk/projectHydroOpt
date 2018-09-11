@@ -1,10 +1,114 @@
 log.print("starting renderer")
 
-optimizingHorizonFrame = CFrame('Optimizing Horizon', width=0.4, height=0.2)
+if globalDict.contains('hydroptModel'):
+    hydroptModel = globalDict.get('hydroptModel')
+else:
+    hydroptModel = hydropt.getData('model')
+    globalDict.set('hydroptModel', hydroptModel)
 
-datePicker = Create(CDatePickerRange, {'name': 'datePicker', 'minDate': (1995, 1, 1), 'maxDate': (2050, 12, 31), 'startDate': (2025, 10, 1), 'endDate': (2031, 10, 1)})
+data = CSafeList(globalDict.get('hydroptModel').Asset)
+if globalDict.get('hydroptModel').nAssets == 1:
+    assets = CSafeList([globalDict.get('hydroptModel').Asset])
+else:
+    assets = CSafeList(lst=data.get(0))
+i = 0
+curList = CSafeList()
+res = CSafeList()
+num = CSafeList()
+rows = CSafeList()
+col1 = CSafeList()
+col2 = CSafeList()
+col3 = CSafeList()
+col4 = CSafeList()
+labelClassName = ''
+mx = 0
+while (i < assets.len()):
+    tDict = CSafeDict({'label': assets.get(i).Shortname, 'value': assets.get(i).Shortname})
+    curList.append(tDict.getDict())
+    mx = max(mx, assets.get(i).Topology.nRes)
+    j = 0
+    labelClassName = labelClassName + str(int(assets.get(i).Topology.nRes))
+    if i != assets.len() - 1:
+        labelClassName = labelClassName + '-'
+    while (j < assets.get(i).Topology.nRes):
+        if assets.get(i).Topology.nRes == 1:
+            reservoirs = CSafeList([assets.get(i).Reservoir])
+        else:
+            reservoirs = CSafeList(CSafeList(assets.get(i).Reservoir).get(0))
+        res.append(reservoirs.get(j).Name)
+        num.append(i)
+        if type(reservoirs.get(j).ScenarioWaterManager.StartLevel) == type([]):
+            col1.append([''])
+        else:
+            col1.append([reservoirs.get(j).ScenarioWaterManager.StartLevel])
+        if type(reservoirs.get(j).ScenarioWaterManager.EndLevel) == type([]):
+            col2.append([''])
+        else:
+            col2.append([reservoirs.get(j).ScenarioWaterManager.EndLevel])
+        if type(reservoirs.get(j).ScenarioWaterManager.Deviation) == type([]):
+            col3.append([''])
+        else:
+            col3.append([reservoirs.get(j).ScenarioWaterManager.Deviation])
+        if type(reservoirs.get(j).ScenarioWaterManager.HalfLife) == type([]):
+            col4.append([''])
+        else:
+            col4.append([reservoirs.get(j).ScenarioWaterManager.HalfLife])
+        j = j + 1
+    i = i + 1
+rows.append(col1.getList())
+rows.append(col2.getList())
+rows.append(col3.getList())
+rows.append(col4.getList())
+
+tval = CSafeList()
+if hydroptModel.ScenarioWaterManager.UseSpills == 1:
+    tval.append('Spills')
+if hydroptModel.ScenarioWaterManager.UseConstraints == 1:
+    tval.append('Min. Hours')
+if hydroptModel.ScenarioWaterManager.UseCosts == 1:
+    tval.append('SU/SD Costs')
+if hydroptModel.ScenarioWaterManager.UseMinRunningFlow == 1:
+    tval.append('Min RunPower')
+if hydroptModel.ScenarioWaterManager.UseInfiltrationLosses == 1:
+    tval.append('Infil. Losses')
+if hydroptModel.ScenarioWaterManager.UseProductionReserves == 1:
+    tval.append('Prod. reserves')
+if hydroptModel.ScenarioWaterManager.UseConsumptionReserves == 1:
+    tval.append('Cons. reserves')
+if hydroptModel.ScenarioWaterManager.UseSpinningProductionReserves == 1:
+    tval.append('Sp. prod. reserves')
+if hydroptModel.ScenarioWaterManager.UseSpinningConsumptionReserves == 1:
+    tval.append('Sp. cons. reserves')
+if hydroptModel.ScenarioWaterManager.UseEngineAlternatives == 1:
+    tval.append('Engine alternatives')
+if hydroptModel.ScenarioWaterManager.UseDynFlowCalc == 1:
+    tval.append('Dyn flow calc')
+if hydroptModel.ScenarioWaterManager.UseFullNewton == 1:
+    tval.append('Full newton')
+StartYear = int(hydroptModel.ScenarioWaterManager.StartYear)
+StartMonth = int(hydroptModel.ScenarioWaterManager.StartMonth)
+StartDay = int(hydroptModel.ScenarioWaterManager.StartDay)
+EndYear = int(hydroptModel.ScenarioWaterManager.EndYear)
+EndMonth = int(hydroptModel.ScenarioWaterManager.EndMonth)
+EndDay =  int(hydroptModel.ScenarioWaterManager.EndDay)
+
+optimizingHorizonFrame = CFrame('Optimizing Horizon', width=0.2, height=0.2)
+
+datePicker = Create(CDatePickerRange, {'name': 'datePicker', 'minDate': (1995, 1, 1), 'maxDate': (2050, 12, 31), 'startDate': (StartYear, StartMonth, StartDay), 'endDate': (EndYear, EndMonth, EndDay)})
 
 optimizingHorizonFrame.aChild(datePicker)
+
+timeGranularityFrame = CFrame('Time Granularity', width=0.2, height=0.2)
+
+timeGranularityDropdown = Create(CDropdown, {'name': 'timeGranularityDropdown',
+                                             'options': [{'label': '15 minutes', 'value': '15min'},
+                                                         {'label': 'hourly', 'value': 'hourly'}],
+                                             'value': 'hourly',
+                                             'multi': False,
+                                             'clearable': False,
+                                             'style': {'width': '100%'}})
+
+timeGranularityFrame.aChild(timeGranularityDropdown)
 
 performanceSettingsFrame = CFrame('Performance Settings', width=0.2, height=0.2)
 
@@ -22,8 +126,10 @@ performanceSettingsDropdown = Create(CDropdown, {'name': 'performanceSettingsDro
                                                     {'label': 'Engine alternatives', 'value': 'Engine alternatives',},
                                                     {'label': 'Full newton', 'value': 'Full newton',},
                                                     ],
-                                        'value': ['Spills',],
+                                        'value': tval.getList(),
                                         'multi': True,
+                                        'clearable': True,
+                                        'placeholder': 'Select performance settings',
                                         'style': {'width': '100%'},
                                     })
 
@@ -40,54 +146,32 @@ scenarioSettingsDropdown = Create(CDropdown, {'name': 'scenarioSettingsDropdown'
                                         'clearable': False,
                                         'style': {'width': '100%'},
                                     })
-scenarioSettingsInput = Create(CInput, {'name': 'scenarioSettingsInput', 'placeholder': 'nScenarios', 'style': {'width': '100%'}})
+scenarioSettingsInput = Create(CInput, {'name': 'scenarioSettingsInput', 'value': hydroptModel.ScenarioWaterManager.nScenarios, 'placeholder': 'nScenarios', 'style': {'width': '100%'}})
+
+tval = CSafeList()
+if hydroptModel.ScenarioWaterManager.UseHPFCOnly == 1:
+    tval.append('Use HPFC Only')
+if hydroptModel.ScenarioWaterManager.ExportScenarios == 1:
+    tval.append('Export Excel')
+if hydroptModel.ScenarioWaterManager.ExportCSV == 1:
+    tval.append('Export CSV')
 scenarioSettingsUseDropdown = Create(CDropdown, {'name': 'scenarioSettingsUseDropdown',
                                         'options': [{'label': 'Use HPFC Only', 'value': 'Use HPFC Only',},
                                                     {'label': 'Export Excel', 'value': 'Export Excel',},
                                                     {'label': 'Export CSV', 'value': 'Export CSV',},
                                                     ],
-                                        'value': '',
+                                        'value': tval.getList(),
                                         'multi': True,
                                         'clearable': True,
                                         'style': {'width': '100%'},
+                                        'placeholder': 'Select scenario settings'
                                     })
 
 scenarioSettingsFrame.aChild(scenarioSettingsDropdown)
 scenarioSettingsFrame.aChild(scenarioSettingsInput)
 scenarioSettingsFrame.aChild(scenarioSettingsUseDropdown)
 
-hedgeEnergyProfileFrame = CFrame('Hedge Energy Profile', width=0.3, height=0.2)
-
-hedgeEnergyProfileDropdown = Create(CDropdown, {'name': 'hedgeEnergyProfileDropdown',
-                                        'options': [{'label': 'No Hedge', 'value': 'No Hedge',},
-                                                    {'label': '100% of Energy', 'value': '100% of Energy',},
-                                                    {'label': '90% of Energy', 'value': '90% of Energy',},
-                                                    {'label': '50% of Energy', 'value': '50% of Energy',},
-                                                    ],
-                                        'value': 'No Hedge',
-                                        'clearable': False,
-                                        'style': {'width': '100%'},
-                                    })
-hedgeEnergyProfileButton = Create(CButton, {'name': 'hedgeEnergyProfileButton',
-                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
-                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
-                            'text': 'Choose file'})
-
-hedgeEnergyProfileFrame.aChild(hedgeEnergyProfileDropdown)
-hedgeEnergyProfileFrame.aChild(hedgeEnergyProfileButton)
-
-hedgeValueFrame = CFrame('Hedge Value', width=0.3, height=0.2)
-
-hedgeValueButton = Create(CButton, {'name': 'hedgeEnergyProfileButton',
-                            'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
-                                      'fontSize': '1vmax', 'marginTop': '1vh', 'marginLeft': '1vw', 'marginRight': '1vw', 'width': '16vw'},
-                            'text': 'Choose file'})
-hedgeValueInput = Create(CInput, {'name': 'hadgeValueInput', 'placeholder': 'Revenues', 'style': {'width': '100%'}})
-
-hedgeValueFrame.aChild(hedgeValueButton)
-hedgeValueFrame.aChild(hedgeValueInput)
-
-importFrame = CFrame('Import Reservoir Parameters', width=0.3, height=0.2, style={'display': 'flex', 'flexDirection': 'column'})
+importFrame = CFrame('Import Reservoir Parameters', width=0.2, height=0.2, style={'display': 'flex', 'flexDirection': 'column'})
 
 importButton = Create(CButton, {'name': 'importButton',
                             'style': {'backgroundColor': 'white', 'boxShadow': '0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)',
@@ -100,44 +184,42 @@ importFrame.aChild(importButton)
 importFrame.aChild(sheetInput)
 importFrame.aChild(rangeInput)
 
-reservoirParametersFrame = CFrame('Reservoir Parameters', width=1.0, height=1.0)
+reservoirParametersFrame = CFrame('Reservoir Parameters', width=1.0, height=0.02 * (res.len() + 2))
 
-reservoirParametersContainer = Create(CContainer, {'name': 'reservoirParametersContainer', 'style': {'display': 'flex', 'flexDirection': 'row', 'justifyContent': 'space-between'}})
+reservoirParametersContainer = Create(CContainer, {'name': 'reservoirParametersContainer', 'style': {'display': 'flex', 'flexDirection': 'row'}})
 
-hydroplantSelectList = Create(CSelectList, {'name': 'hydroplantSelectList', 'labels': ['KWO', 'All'],
-                                    'containerStyle': {'display': 'flex', 'flexDirection': 'column', 'width': '20%', 'background': 'rgb(245, 245, 245)', 'marginTop': '1%', 'padding-left': '5%'},
-                                    'labelStyle': {'background': 'rgb(245, 245, 245)', 'width': '100%', 'border': '1px solid black', 'color': 'black', 'padding': '5px 0 5px 5px',
-                                                   'marginBottom': '70%'},
-                                    'selectedLabelStyle': {'background': '#AAA', 'width': '100%', 'border': '1px solid black', 'color': 'white', 'padding': '5px 0 5px 5px',
-                                                   'marginBottom': '70%'}
-                            })
+assetsContainer = Create(CContainer, {'name': 'assetsContainer', 'style': {'width': '15%', 'display': 'flex', 'flexDirection': 'column'}})
 
-tableContainer = Create(CContainer, {'name': 'tableContainer', 'style': {'display': 'flex', 'flexDirection': 'row', 'width': '70%'}})
+assetsTitle = Create(CText, {'name': 'assetsTitle', 'text': 'Asset'})
 
-rowNames = Create(CContainer, {'name': 'rowNames', 'style': {'width': '15%', 'marginTop': '4.5%'}})
+assetsContainer.aChild(assetsTitle)
 
-text1 = Create(CText, {'name': 'text1', 'text': 'Oberaarsee', 'style': {'marginBottom': '9%'}})
-text2 = Create(CText, {'name': 'text2', 'text': 'Grimselsee', 'style': {'marginBottom': '9%'}})
-text3 = Create(CText, {'name': 'text3', 'text': 'Gelmersee', 'style': {'marginBottom': '9%'}})
-text4 = Create(CText, {'name': 'text4', 'text': 'Räterichsbodensee', 'style': {'marginBottom': '9%'}})
-text5 = Create(CText, {'name': 'text5', 'text': 'AB Handeck', 'style': {'marginBottom': '9%'}})
+assetsChecklist = Create(CChecklist, {'name': 'assetsChecklist', 'options': curList.getList(), 'labelClassName': labelClassName,
+                                      'labelStyle': {'marginBottom': str((mx - 1) * 22) + 'px', 'margin-left': '40px'}})
 
-rowNames.aChild(text1)
-rowNames.aChild(text2)
-rowNames.aChild(text3)
-rowNames.aChild(text4)
-rowNames.aChild(text5)
+assetsContainer.aChild(assetsChecklist)
 
-hydroplantTable = Create(CDataTable, {'name': 'hzdroplantTable', 'editable' : True, 'row_selectable': False, 'sortable': False, 'filterable': False,
-                                      'rows': [[[''], [''], [''], [''], ['']], [[''], [''], [''], [''], ['']], [[''], [''], [''], [''], ['']], [[''], [''], [''], [''], ['']]],
-                                      'headers': ['Start level [m3]', 'End level [m3]', 'Inflow Deviation [%]', 'Half life [d]'],
-                                   'style': {'width': '65%', 'height': '50%', 'marginLeft': '1%', 'marginRight': '1%', 'marginTop': '1%'}})
+reservoirsContainer = Create(CContainer, {'name': 'reservoirContainer', 'style': {'width': '15%', 'display': 'flex', 'flexDirection': 'column'}})
 
-tableContainer.aChild(rowNames)
-tableContainer.aChild(hydroplantTable)
+reservoirsTitle = Create(CText, {'name': 'reservoirsTitle', 'text': 'Reservoir'})
 
-reservoirParametersContainer.aChild(hydroplantSelectList)
-reservoirParametersContainer.aChild(tableContainer)
+reservoirsContainer.aChild(reservoirsTitle)
+
+i = 0
+while (i < res.len()):
+    margin = 0
+    tmp = Create(CText, {'name': 'tmp-' + str(i), 'text': res.get(i), 'style': {'marginTop': '0px', 'marginBottom': '13px'}})
+    reservoirsContainer.aChild(tmp)
+    i = i + 1
+
+hydroplantTable = Create(CDataTable, {'name': 'hydroplantTable', 'editable' : True, 'row_selectable': False, 'sortable': False, 'filterable': False,
+                                      'headers': ['Start level [m3]', 'End level [m3]', 'Inflow Deviation [%]', 'Half life [d]'], 'min_height': 35 * (res.len() + 1) + 10,
+                                      'style': {'width': '70%', 'height': '50vh', 'marginTop': '1px'},
+                                      'rows': rows.getList(),})
+
+reservoirParametersContainer.aChild(assetsContainer)
+reservoirParametersContainer.aChild(reservoirsContainer)
+reservoirParametersContainer.aChild(hydroplantTable)
 
 reservoirParametersFrame.aChild(reservoirParametersContainer)
 
@@ -155,16 +237,15 @@ backButton = Create(CButton, {'name': 'backButton', 'link': '/d/DisplayScreen@sc
 buttonsContainer.aChild(importButton)
 buttonsContainer.aChild(backButton)
 
-myScreen = CPage('Scheduler')
+myScreen = CPage('Scenario Manager')
 
 myWaitStopper = CStopWaitingForGraphics()
 myScreen.aChild(myWaitStopper)
 
 myScreen.aChild(optimizingHorizonFrame)
+myScreen.aChild(timeGranularityFrame)
 myScreen.aChild(performanceSettingsFrame)
 myScreen.aChild(scenarioSettingsFrame)
-myScreen.aChild(hedgeEnergyProfileFrame)
-myScreen.aChild(hedgeValueFrame)
 myScreen.aChild(importFrame)
 myScreen.aChild(reservoirParametersFrame)
 myScreen.aChild(buttonsContainer)
